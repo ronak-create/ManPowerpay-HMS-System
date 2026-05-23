@@ -1,0 +1,454 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ENUMS ────────────────────────────────────────────────────────────────────
+
+enum Role {
+  admin
+  supervisor
+  employee
+}
+
+enum AttendanceStatus {
+  P    // Present
+  A    // Absent
+  H    // Half Day
+  PL   // Paid Leave
+  WO   // Week Off
+  HO   // Holiday
+  LWP  // Loss of Pay (auto-computed from leave)
+}
+
+enum LeaveType {
+  CL   // Casual Leave
+  PL   // Privilege / Earned Leave
+  SL   // Sick Leave
+  LWP  // Leave Without Pay
+}
+
+enum LeaveStatus {
+  pending
+  approved
+  rejected
+  cancelled
+}
+
+enum PayrollStatus {
+  draft
+  approved
+  locked
+}
+
+enum ComponentType {
+  earning
+  deduction
+  employer_contribution
+}
+
+enum ComponentBasis {
+  fixed
+  percent_of_basic
+  percent_of_gross
+  per_day_absent
+  ot_formula
+  state_slab
+  tds_formula
+  manual
+}
+
+enum AdvanceStatus {
+  active
+  closed
+}
+
+// ─── USERS ────────────────────────────────────────────────────────────────────
+
+model User {
+  id             String    @id @default(cuid())
+  name           String
+  email          String    @unique
+  mobile         String    @unique
+  passwordHash   String
+  role           Role
+  isActive       Boolean   @default(true)
+  lastLogin      DateTime?
+  failedAttempts Int       @default(0)
+  lockedUntil    DateTime?
+  resetToken     String?
+  resetTokenExp  DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relations
+  employee       Employee?
+  supervisor     Supervisor?
+  auditLogs      AuditLog[]
+
+  @@map("users")
+}
+
+// ─── COMPANY ──────────────────────────────────────────────────────────────────
+
+model Company {
+  id               String   @id @default(cuid())
+  name             String
+  logoPath         String?
+  registeredAddress String
+  gstin            String?
+  pan              String?
+  epfCode          String?  // EPF establishment code
+  esicCode         String?  // ESIC employer code
+  ptState          String   @default("Gujarat")
+  payrollCycleDay  Int      @default(1)  // Day of month payroll is run
+  workingDaysBase  Int      @default(26) // 26 or calendar days
+  otMultiplier     Float    @default(2.0)
+  financialYearStart Int    @default(4)  // April = 4
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  holidays         Holiday[]
+  ptSlabs          PtSlab[]
+  salaryTemplates  SalaryTemplate[]
+  departments      Department[]
+  sites            Site[]
+
+  @@map("companies")
+}
+
+model Holiday {
+  id          String   @id @default(cuid())
+  companyId   String
+  name        String
+  date        DateTime @db.Date
+  createdAt   DateTime @default(now())
+
+  company     Company  @relation(fields: [companyId], references: [id])
+
+  @@map("holidays")
+}
+
+model PtSlab {
+  id         String  @id @default(cuid())
+  companyId  String
+  state      String
+  minSalary  Float
+  maxSalary  Float?
+  ptAmount   Float
+  frequency  String  @default("monthly") // monthly | quarterly
+
+  company    Company @relation(fields: [companyId], references: [id])
+
+  @@map("pt_slabs")
+}
+
+model Department {
+  id        String     @id @default(cuid())
+  companyId String
+  name      String
+  company   Company    @relation(fields: [companyId], references: [id])
+  employees Employee[]
+
+  @@map("departments")
+}
+
+model Site {
+  id          String       @id @default(cuid())
+  companyId   String
+  name        String
+  address     String?
+  company     Company      @relation(fields: [companyId], references: [id])
+  employees   Employee[]
+  supervisors Supervisor[]
+
+  @@map("sites")
+}
+
+// ─── SALARY TEMPLATES ────────────────────────────────────────────────────────
+
+model SalaryTemplate {
+  id          String              @id @default(cuid())
+  companyId   String
+  name        String
+  components  SalaryComponent[]
+  employees   Employee[]
+  company     Company             @relation(fields: [companyId], references: [id])
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@map("salary_templates")
+}
+
+model SalaryComponent {
+  id               String         @id @default(cuid())
+  templateId       String
+  name             String
+  type             ComponentType
+  basis            ComponentBasis
+  value            Float          // Fixed amount OR percentage
+  sequence         Int            // Calculation order
+  isEpfApplicable  Boolean        @default(false) // Is EPF computed on this?
+  isEsicApplicable Boolean        @default(false)
+  isActive         Boolean        @default(true)
+
+  template         SalaryTemplate @relation(fields: [templateId], references: [id])
+
+  @@map("salary_components")
+}
+
+// ─── SUPERVISORS ─────────────────────────────────────────────────────────────
+
+model Supervisor {
+  id          String     @id @default(cuid())
+  userId      String     @unique
+  employeeId  String?    // Supervisor may also be an employee (optional)
+  siteId      String?
+  createdAt   DateTime   @default(now())
+
+  user        User       @relation(fields: [userId], references: [id])
+  site        Site?      @relation(fields: [siteId], references: [id])
+  employees   Employee[]
+
+  @@map("supervisors")
+}
+
+// ─── EMPLOYEES ────────────────────────────────────────────────────────────────
+
+model Employee {
+  id                 String          @id @default(cuid())
+  userId             String          @unique
+  empCode            String          @unique
+  supervisorId       String?
+  departmentId       String?
+  siteId             String?
+  salaryTemplateId   String?
+  designation        String
+  dateOfJoining      DateTime        @db.Date
+  dateOfLeaving      DateTime?       @db.Date
+  isActive           Boolean         @default(true)
+
+  // Personal
+  dateOfBirth        DateTime?       @db.Date
+  gender             String?
+  address            String?
+  emergencyContact   String?
+  emergencyPhone     String?
+
+  // Statutory IDs
+  pfAccountNo        String?
+  esicNo             String?
+  pan                String?
+  aadhaarNo          String?         // Store encrypted
+  uanNo              String?         // UAN for PF
+
+  // Bank (store encrypted)
+  bankName           String?
+  bankAccountNo      String?
+  ifscCode           String?
+
+  // CTC
+  annualCTC          Float           @default(0)
+
+  // Documents
+  documents          EmployeeDocument[]
+
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  user               User            @relation(fields: [userId], references: [id])
+  supervisor         Supervisor?     @relation(fields: [supervisorId], references: [id])
+  department         Department?     @relation(fields: [departmentId], references: [id])
+  site               Site?           @relation(fields: [siteId], references: [id])
+  salaryTemplate     SalaryTemplate? @relation(fields: [salaryTemplateId], references: [id])
+  attendance         Attendance[]
+  leaveRequests      LeaveRequest[]
+  payslips           Payslip[]
+  advanceLoans       AdvanceLoan[]
+  leaveBalance       LeaveBalance[]
+
+  @@map("employees")
+}
+
+model EmployeeDocument {
+  id          String   @id @default(cuid())
+  employeeId  String
+  type        String   // aadhaar | pan | bank_passbook | offer_letter | other
+  filePath    String
+  uploadedAt  DateTime @default(now())
+
+  employee    Employee @relation(fields: [employeeId], references: [id])
+
+  @@map("employee_documents")
+}
+
+// ─── ATTENDANCE ───────────────────────────────────────────────────────────────
+
+model Attendance {
+  id               String           @id @default(cuid())
+  employeeId       String
+  date             DateTime         @db.Date
+  status           AttendanceStatus
+  otHours          Float            @default(0)
+  markedById       String?          // Supervisor userId
+  markedAt         DateTime?
+  correctedById    String?          // Who corrected it
+  correctionReason String?
+  isLocked         Boolean          @default(false) // Locked after payroll run
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  employee         Employee         @relation(fields: [employeeId], references: [id])
+
+  @@unique([employeeId, date])
+  @@map("attendance")
+}
+
+// ─── LEAVES ──────────────────────────────────────────────────────────────────
+
+model LeaveBalance {
+  id         String    @id @default(cuid())
+  employeeId String
+  leaveType  LeaveType
+  year       Int
+  total      Float     @default(0)
+  used       Float     @default(0)
+  balance    Float     @default(0)
+
+  employee   Employee  @relation(fields: [employeeId], references: [id])
+
+  @@unique([employeeId, leaveType, year])
+  @@map("leave_balances")
+}
+
+model LeaveRequest {
+  id           String      @id @default(cuid())
+  employeeId   String
+  leaveType    LeaveType
+  fromDate     DateTime    @db.Date
+  toDate       DateTime    @db.Date
+  totalDays    Float
+  reason       String
+  status       LeaveStatus @default(pending)
+  approvedById String?
+  approvedAt   DateTime?
+  remarks      String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  employee     Employee    @relation(fields: [employeeId], references: [id])
+
+  @@map("leave_requests")
+}
+
+// ─── PAYROLL ──────────────────────────────────────────────────────────────────
+
+model PayrollRun {
+  id           String        @id @default(cuid())
+  month        Int           // 1–12
+  year         Int
+  status       PayrollStatus @default(draft)
+  approvedById String?
+  approvedAt   DateTime?
+  lockedAt     DateTime?
+  notes        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  payslips     Payslip[]
+
+  @@unique([month, year])
+  @@map("payroll_runs")
+}
+
+model Payslip {
+  id            String     @id @default(cuid())
+  employeeId    String
+  payrollRunId  String
+  month         Int
+  year          Int
+
+  // Summary figures
+  grossPayable  Float
+  totalDeductions Float
+  netPay        Float
+
+  // Detailed JSON
+  earningsJson      Json   // [{ name, amount }]
+  deductionsJson    Json   // [{ name, amount }]
+  employerContribJson Json // [{ name, amount }]
+
+  // Attendance snapshot
+  workingDays   Int
+  presentDays   Float
+  otHours       Float      @default(0)
+  lwpDays       Float      @default(0)
+
+  // TDS
+  tdsTillDate   Float      @default(0)
+  tdsThisMonth  Float      @default(0)
+
+  pdfPath       String?
+  createdAt     DateTime   @default(now())
+
+  employee      Employee   @relation(fields: [employeeId], references: [id])
+  payrollRun    PayrollRun @relation(fields: [payrollRunId], references: [id])
+
+  @@unique([employeeId, payrollRunId])
+  @@map("payslips")
+}
+
+// ─── ADVANCE LOANS ────────────────────────────────────────────────────────────
+
+model AdvanceLoan {
+  id              String        @id @default(cuid())
+  employeeId      String
+  sanctionedAmount Float
+  emi             Float
+  startMonth      Int
+  startYear       Int
+  balanceRemaining Float
+  status          AdvanceStatus @default(active)
+  reason          String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  employee        Employee      @relation(fields: [employeeId], references: [id])
+
+  @@map("advance_loans")
+}
+
+// ─── AUDIT LOGS ───────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String   // CREATE | UPDATE | DELETE | LOGIN | LOGOUT | PAYROLL_RUN | etc.
+  entity    String   // employees | attendance | payroll | etc.
+  entityId  String
+  oldValue  Json?
+  newValue  Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+// ─── OTP / PASSWORD RESET ─────────────────────────────────────────────────────
+
+model OtpToken {
+  id        String   @id @default(cuid())
+  email     String
+  otp       String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("otp_tokens")
+}
