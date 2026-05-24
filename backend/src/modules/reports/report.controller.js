@@ -142,6 +142,26 @@ export const payrollSummaryReport = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, run));
 });
 
+export const payrollTrend = asyncHandler(async (req, res) => {
+  const today = new Date();
+  const trend = await Promise.all(
+    Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(today.getFullYear(), today.getMonth() - (5 - i), 1);
+      return prisma.payrollRun.findUnique({
+        where: { month_year: { month: d.getMonth() + 1, year: d.getFullYear() } },
+        include: { payslips: { select: { netPay: true } } }
+      }).then(run => ({
+        month: d.getMonth() + 1,
+        year: d.getFullYear(),
+        label: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()],
+        netPay: run ? run.payslips.reduce((s, p) => s + p.netPay, 0) : 0,
+        status: run?.status || null
+      }));
+    })
+  );
+  res.json(new ApiResponse(200, trend));
+});
+
 // ── HEADCOUNT REPORT ──────────────────────────────────────────────────────────
 export const headcountReport = asyncHandler(async (req, res) => {
   const { siteId, isActive = 'true' } = req.query;

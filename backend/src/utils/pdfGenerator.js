@@ -2,17 +2,23 @@ import PdfPrinter from 'pdfmake';
 import { format } from 'date-fns';
 import path from 'path';
 
+// pdfmake ships its own VFS with built-in fonts
+// We use the built-in Roboto via vfs_fonts
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pdfMakeFonts = require('pdfmake/build/vfs_fonts.js');
+
 const fonts = {
   Roboto: {
-    normal: 'node_modules/pdfmake/build/vfs_fonts.js',
-    bold: 'node_modules/pdfmake/build/vfs_fonts.js',
-    italics: 'node_modules/pdfmake/build/vfs_fonts.js',
-    bolditalics: 'node_modules/pdfmake/build/vfs_fonts.js',
+    normal: 'Roboto-Regular.ttf',
+    bold: 'Roboto-Medium.ttf',
+    italics: 'Roboto-Italic.ttf',
+    bolditalics: 'Roboto-MediumItalic.ttf',
   }
 };
 
-// Use standard fonts bundled with pdfmake
 const printer = new PdfPrinter(fonts);
+printer.vfs = pdfMakeFonts;
 
 const BLUE = '#1F4E79';
 const LIGHT_BLUE = '#BDD7EE';
@@ -66,7 +72,7 @@ export async function generatePayslipPDF(payslip, employee, company) {
   const docDefinition = {
     pageSize: 'A4',
     pageMargins: [36, 36, 36, 36],
-    defaultStyle: { font: 'Helvetica', fontSize: 9, color: DARK },
+    defaultStyle: { font: 'Roboto', fontSize: 9, color: DARK },
 
     content: [
       {
