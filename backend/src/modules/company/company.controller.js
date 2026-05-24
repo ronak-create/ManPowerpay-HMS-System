@@ -92,6 +92,23 @@ export const createAdvanceLoan = asyncHandler(async (req, res) => {
   res.status(201).json(new ApiResponse(201, loan, 'Advance loan created'));
 });
 
+// DELETE /api/company/sites/:id
+export const deleteSite = asyncHandler(async (req, res) => {
+  // Check if any employees are assigned to this site first
+  const count = await prisma.employee.count({ where: { siteId: req.params.id } });
+  if (count > 0) throw new ApiError(400, `Cannot delete — ${count} employee(s) are assigned to this site`);
+  await prisma.site.delete({ where: { id: req.params.id } });
+  res.json(new ApiResponse(200, null, 'Site deleted'));
+});
+
+// DELETE /api/company/departments/:id
+export const deleteDepartment = asyncHandler(async (req, res) => {
+  const count = await prisma.employee.count({ where: { departmentId: req.params.id } });
+  if (count > 0) throw new ApiError(400, `Cannot delete — ${count} employee(s) are in this department`);
+  await prisma.department.delete({ where: { id: req.params.id } });
+  res.json(new ApiResponse(200, null, 'Department deleted'));
+});
+
 // GET /api/company/advance-loans
 export const listAdvanceLoans = asyncHandler(async (req, res) => {
   const { status, employeeId } = req.query;
