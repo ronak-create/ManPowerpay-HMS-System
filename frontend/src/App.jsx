@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { useEffect } from 'react';
+import api from './api/axios';
 import useAuthStore from './store/authStore';
 
 // Auth
@@ -8,36 +10,31 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 
 // Admin
+import AdminDashboard from './pages/admin/Dashboard';
 import AdminLayout from './components/layout/AdminLayout';
 import EmployeeList from './pages/admin/EmployeeList';
 import EmployeeForm from './pages/admin/EmployeeForm';
 import SupervisorList from './pages/admin/SupervisorList';
+import SalaryTemplates from './pages/admin/SalaryTemplates';
+import PayrollRun from './pages/admin/PayrollRun';
+import Reports from './pages/admin/Reports';
+import AuditLogs from './pages/admin/AuditLogs';
+import CompanySettings from './pages/admin/CompanySettings';
 
 // Supervisor
 import SupervisorLayout from './components/layout/SupervisorLayout';
+import SupervisorDashboard from './pages/supervisor/Dashboard';
 import AttendanceEntry from './pages/supervisor/AttendanceEntry';
+import TeamOverview from './pages/supervisor/TeamOverview';
+import LeaveApprovals from './pages/supervisor/LeaveApprovals';
 
 // Employee
 import EmployeeLayout from './components/layout/EmployeeLayout';
+import EmployeeDashboard from './pages/employee/Dashboard';
 import MyAttendance from './pages/employee/MyAttendance';
-
-const DummyPage = ({ name }) => <div className="p-8"><h1>{name}</h1><p>Coming Soon...</p></div>;
-
-const AdminDashboard = () => <DummyPage name="Admin Dashboard" />;
-const CompanySettings = () => <DummyPage name="Company Settings" />;
-const SalaryTemplates = () => <DummyPage name="Salary Templates" />;
-const PayrollRun = () => <DummyPage name="Payroll Run" />;
-const AdminReports = () => <DummyPage name="Admin Reports" />;
-const AuditLogs = () => <DummyPage name="Audit Logs" />;
-
-const SupervisorDashboard = () => <DummyPage name="Supervisor Dashboard" />;
-const TeamOverview = () => <DummyPage name="Team Overview" />;
-const LeaveApprovals = () => <DummyPage name="Leave Approvals" />;
-
-const EmployeeDashboard = () => <DummyPage name="Employee Dashboard" />;
-const MyPayslips = () => <DummyPage name="My Payslips" />;
-const LeaveApplication = () => <DummyPage name="Leave Application" />;
-const MyProfile = () => <DummyPage name="My Profile" />;
+import MyPayslips from './pages/employee/MyPayslips';
+import LeaveApplication from './pages/employee/LeaveApplication';
+import MyProfile from './pages/employee/MyProfile';
 
 const PrivateRoute = ({ children, role }) => {
   const { user, token } = useAuthStore();
@@ -46,16 +43,29 @@ const PrivateRoute = ({ children, role }) => {
   return children;
 };
 
+function AppInit() {
+  const { token, login, logout } = useAuthStore();
+
+  useEffect(() => {
+    if (!token) return;
+    api.get('/auth/me')
+      .then(r => login(r.data.data, token))
+      .catch(() => logout());
+  }, []);
+
+  return null;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
+      <AppInit />
       <Toaster position="top-right" />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-        {/* Admin Routes */}
         <Route path="/admin" element={<PrivateRoute role="admin"><AdminLayout /></PrivateRoute>}>
           <Route index element={<AdminDashboard />} />
           <Route path="company" element={<CompanySettings />} />
@@ -65,11 +75,10 @@ export default function App() {
           <Route path="employees/:id/edit" element={<EmployeeForm />} />
           <Route path="salary-templates" element={<SalaryTemplates />} />
           <Route path="payroll" element={<PayrollRun />} />
-          <Route path="reports" element={<AdminReports />} />
+          <Route path="reports" element={<Reports />} />
           <Route path="audit-logs" element={<AuditLogs />} />
         </Route>
 
-        {/* Supervisor Routes */}
         <Route path="/supervisor" element={<PrivateRoute role="supervisor"><SupervisorLayout /></PrivateRoute>}>
           <Route index element={<SupervisorDashboard />} />
           <Route path="attendance" element={<AttendanceEntry />} />
@@ -77,7 +86,6 @@ export default function App() {
           <Route path="leaves" element={<LeaveApprovals />} />
         </Route>
 
-        {/* Employee Routes */}
         <Route path="/employee" element={<PrivateRoute role="employee"><EmployeeLayout /></PrivateRoute>}>
           <Route index element={<EmployeeDashboard />} />
           <Route path="attendance" element={<MyAttendance />} />

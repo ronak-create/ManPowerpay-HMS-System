@@ -1,0 +1,1 @@
+export default function MyPayslips() { return <div className="p-8"><h1>My Payslips</h1></div>; }

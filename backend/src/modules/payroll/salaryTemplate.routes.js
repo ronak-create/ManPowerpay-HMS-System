@@ -29,6 +29,6 @@ router.put('/:id', asyncHandler(async (req, res) => {
     prisma.salaryTemplate.update({ where: { id: req.params.id }, data: { name, components: { create: components } } })
   ]);
   res.json(new ApiResponse(200, null, 'Template updated'));
-});
+}));
 
 export default router;

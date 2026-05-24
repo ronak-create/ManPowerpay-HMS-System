@@ -2,19 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@layer base {
+  * { box-sizing: border-box; }
+  body { @apply text-gray-800 antialiased; }
+  ::-webkit-scrollbar { @apply w-1.5; }
+  ::-webkit-scrollbar-thumb { @apply bg-gray-300 rounded-full; }
+  ::-webkit-scrollbar-track { @apply bg-transparent; }
 }
 
-body {
-  margin: 0;
-  display: flex;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-#root {
-  width: 100%;
+@layer components {
+  .page-header {
+    @apply text-2xl font-bold text-primary mb-6;
+  }
+  .section-header {
+    @apply text-lg font-semibold text-gray-700 mb-4;
+  }
+  .form-section {
+    @apply bg-white rounded-xl border border-gray-200 p-5 mb-4;
+  }
+  .action-bar {
+    @apply flex items-center justify-between mb-4;
+  }
 }
