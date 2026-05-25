@@ -15,7 +15,7 @@ import { formatINR, MONTH_NAMES } from "../../utils/formatCurrency";
 import { StatusBadge } from "../../components/ui/Badge";
 
 export default function EmployeeDashboard() {
-  const { user } = useAuthStore();
+  const { user, authReady } = useAuthStore();
   const [attendance, setAttendance] = useState(null);
   const [lastPayslip, setLastPayslip] = useState(null);
   const [leaveBalance, setLeaveBalance] = useState([]);
@@ -24,14 +24,11 @@ export default function EmployeeDashboard() {
   const month = today.getMonth() + 1;
   const year = today.getFullYear();
 
-  // BUG FIX: was [] — so useEffect never re-ran after AppInit resolved
-  // user.employee.id arrives asynchronously via /auth/me in AppInit;
-  // adding it as a dependency ensures we fetch once it's available.
   useEffect(() => {
     const empId = user?.employee?.id;
     if (!authReady) return;
     if (!empId) {
-      setLoading(false); // auth done but no employee record — stop spinner
+      setLoading(false);
       return;
     }
 
@@ -46,11 +43,9 @@ export default function EmployeeDashboard() {
         setLastPayslip(ps.data.data?.[0]);
         setLeaveBalance(lb.data.data);
       })
-      .catch(() => {
-        // silently fail — individual sections can show empty state
-      })
+      .catch(() => {})
       .finally(() => setLoading(false));
-  }, [user?.employee?.id]); // re-runs when employee ID becomes available
+  }, [authReady, user?.employee?.id]);
 
   const greeting = () => {
     const h = today.getHours();
@@ -90,35 +85,12 @@ export default function EmployeeDashboard() {
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            {
-              label: "Present",
-              value: s.present ?? 0,
-              color: "from-green-500 to-emerald-600",
-              icon: "✅",
-            },
-            {
-              label: "Absent",
-              value: s.absent ?? 0,
-              color: "from-red-500 to-rose-600",
-              icon: "❌",
-            },
-            {
-              label: "Half Days",
-              value: s.halfDay ?? 0,
-              color: "from-amber-500 to-orange-500",
-              icon: "🌗",
-            },
-            {
-              label: "OT Hours",
-              value: s.totalOT ?? 0,
-              color: "from-blue-500 to-indigo-600",
-              icon: "⏱",
-            },
+            { label: "Present", value: s.present ?? 0, color: "from-green-500 to-emerald-600", icon: "✅" },
+            { label: "Absent", value: s.absent ?? 0, color: "from-red-500 to-rose-600", icon: "❌" },
+            { label: "Half Days", value: s.halfDay ?? 0, color: "from-amber-500 to-orange-500", icon: "🌗" },
+            { label: "OT Hours", value: s.totalOT ?? 0, color: "from-blue-500 to-indigo-600", icon: "⏱" },
           ].map((c) => (
-            <div
-              key={c.label}
-              className={`bg-gradient-to-br ${c.color} rounded-2xl p-4 text-white shadow-card`}
-            >
+            <div key={c.label} className={`bg-gradient-to-br ${c.color} rounded-2xl p-4 text-white shadow-card`}>
               <div className="text-2xl mb-1">{c.icon}</div>
               <div className="text-2xl font-black">{c.value}</div>
               <div className="text-white/80 text-xs font-medium">{c.label}</div>
@@ -133,10 +105,7 @@ export default function EmployeeDashboard() {
           <div className="card">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-800">Latest Payslip</h3>
-              <Link
-                to="/employee/payslips"
-                className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"
-              >
+              <Link to="/employee/payslips" className="text-xs text-primary font-semibold hover:underline flex items-center gap-1">
                 View all <ChevronRight size={13} />
               </Link>
             </div>
@@ -144,29 +113,21 @@ export default function EmployeeDashboard() {
               <p className="text-white/70 text-xs">
                 {MONTH_NAMES[lastPayslip.month - 1]} {lastPayslip.year}
               </p>
-              <p className="text-3xl font-black mt-0.5">
-                {formatINR(lastPayslip.netPay)}
-              </p>
+              <p className="text-3xl font-black mt-0.5">{formatINR(lastPayslip.netPay)}</p>
               <p className="text-white/60 text-xs mt-1">Take-home pay</p>
             </div>
             <div className="grid grid-cols-3 gap-3 text-center">
               <div className="bg-gray-50 rounded-xl p-3">
                 <p className="text-xs text-gray-500">Gross</p>
-                <p className="font-bold text-gray-800 text-sm mt-0.5">
-                  {formatINR(lastPayslip.grossPayable)}
-                </p>
+                <p className="font-bold text-gray-800 text-sm mt-0.5">{formatINR(lastPayslip.grossPayable)}</p>
               </div>
               <div className="bg-gray-50 rounded-xl p-3">
                 <p className="text-xs text-gray-500">Deductions</p>
-                <p className="font-bold text-red-600 text-sm mt-0.5">
-                  {formatINR(lastPayslip.totalDeductions)}
-                </p>
+                <p className="font-bold text-red-600 text-sm mt-0.5">{formatINR(lastPayslip.totalDeductions)}</p>
               </div>
               <div className="bg-gray-50 rounded-xl p-3">
                 <p className="text-xs text-gray-500">Days</p>
-                <p className="font-bold text-gray-800 text-sm mt-0.5">
-                  {lastPayslip.presentDays}
-                </p>
+                <p className="font-bold text-gray-800 text-sm mt-0.5">{lastPayslip.presentDays}</p>
               </div>
             </div>
           </div>
@@ -180,61 +141,34 @@ export default function EmployeeDashboard() {
         {/* Leave balances */}
         <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-800">
-              Leave Balance {year}
-            </h3>
-            <Link
-              to="/employee/leaves"
-              className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"
-            >
+            <h3 className="font-semibold text-gray-800">Leave Balance {year}</h3>
+            <Link to="/employee/leaves" className="text-xs text-primary font-semibold hover:underline flex items-center gap-1">
               Apply <ChevronRight size={13} />
             </Link>
           </div>
           <div className="space-y-3">
             {leaveBalance.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-4">
-                Leave balance not initialized yet
-              </p>
+              <p className="text-sm text-gray-400 text-center py-4">Leave balance not initialized yet</p>
             ) : (
               leaveBalance.map((b) => {
                 const pct = b.total > 0 ? (b.used / b.total) * 100 : 0;
-                const colors = {
-                  CL: "bg-blue-500",
-                  PL: "bg-green-500",
-                  SL: "bg-amber-500",
-                  LWP: "bg-gray-400",
-                };
+                const colors = { CL: "bg-blue-500", PL: "bg-green-500", SL: "bg-amber-500", LWP: "bg-gray-400" };
                 return (
                   <div key={b.leaveType} className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
-                      <span className="text-xs font-black text-gray-600">
-                        {b.leaveType}
-                      </span>
+                      <span className="text-xs font-black text-gray-600">{b.leaveType}</span>
                     </div>
                     <div className="flex-1">
                       <div className="flex justify-between items-center mb-1">
                         <span className="text-xs font-semibold text-gray-700">
-                          {b.leaveType === "CL"
-                            ? "Casual Leave"
-                            : b.leaveType === "PL"
-                              ? "Privilege Leave"
-                              : b.leaveType === "SL"
-                                ? "Sick Leave"
-                                : "Leave Without Pay"}
+                          {b.leaveType === "CL" ? "Casual Leave" : b.leaveType === "PL" ? "Privilege Leave" : b.leaveType === "SL" ? "Sick Leave" : "Leave Without Pay"}
                         </span>
-                        <span className="text-xs text-gray-500">
-                          {b.balance} left
-                        </span>
+                        <span className="text-xs text-gray-500">{b.balance} left</span>
                       </div>
                       <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${colors[b.leaveType] || "bg-gray-400"}`}
-                          style={{ width: `${pct}%` }}
-                        />
+                        <div className={`h-full rounded-full ${colors[b.leaveType] || "bg-gray-400"}`} style={{ width: `${pct}%` }} />
                       </div>
-                      <p className="text-[10px] text-gray-400 mt-0.5">
-                        {b.used} used of {b.total} total
-                      </p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">{b.used} used of {b.total} total</p>
                     </div>
                   </div>
                 );
@@ -249,36 +183,12 @@ export default function EmployeeDashboard() {
         <h2 className="section-title">Quick Actions</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            {
-              to: "/employee/attendance",
-              icon: "📅",
-              label: "View Attendance",
-              color: "hover:border-blue-300 hover:bg-blue-50/40",
-            },
-            {
-              to: "/employee/payslips",
-              icon: "📄",
-              label: "Download Payslip",
-              color: "hover:border-green-300 hover:bg-green-50/40",
-            },
-            {
-              to: "/employee/leaves",
-              icon: "🏖",
-              label: "Apply Leave",
-              color: "hover:border-amber-300 hover:bg-amber-50/40",
-            },
-            {
-              to: "/employee/profile",
-              icon: "👤",
-              label: "My Profile",
-              color: "hover:border-purple-300 hover:bg-purple-50/40",
-            },
+            { to: "/employee/attendance", icon: "📅", label: "View Attendance", color: "hover:border-blue-300 hover:bg-blue-50/40" },
+            { to: "/employee/payslips", icon: "📄", label: "Download Payslip", color: "hover:border-green-300 hover:bg-green-50/40" },
+            { to: "/employee/leaves", icon: "🏖", label: "Apply Leave", color: "hover:border-amber-300 hover:bg-amber-50/40" },
+            { to: "/employee/profile", icon: "👤", label: "My Profile", color: "hover:border-purple-300 hover:bg-purple-50/40" },
           ].map((a) => (
-            <Link
-              key={a.to}
-              to={a.to}
-              className={`card card-hover text-center py-5 border transition-colors ${a.color}`}
-            >
+            <Link key={a.to} to={a.to} className={`card card-hover text-center py-5 border transition-colors ${a.color}`}>
               <div className="text-3xl mb-2">{a.icon}</div>
               <p className="text-xs font-semibold text-gray-700">{a.label}</p>
             </Link>
