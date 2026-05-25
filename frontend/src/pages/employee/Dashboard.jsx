@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import api from '../../api/axios';
 import useAuthStore from '../../store/authStore';
 import { formatINR, MONTH_NAMES } from '../../utils/formatCurrency';
+import { StatusBadge } from '../../components/ui/Badge';
 
 export default function EmployeeDashboard() {
   const { user } = useAuthStore();
@@ -16,9 +17,14 @@ export default function EmployeeDashboard() {
   const month = today.getMonth() + 1;
   const year = today.getFullYear();
 
+  // BUG FIX: was [] — so useEffect never re-ran after AppInit resolved
+  // user.employee.id arrives asynchronously via /auth/me in AppInit;
+  // adding it as a dependency ensures we fetch once it's available.
   useEffect(() => {
     const empId = user?.employee?.id;
-    if (!empId) return;
+    if (!empId) return; // wait until AppInit populates user.employee
+
+    setLoading(true);
     Promise.all([
       api.get(`/attendance/employee/${empId}?month=${month}&year=${year}`),
       api.get(`/payslips?year=${year}`),
@@ -27,8 +33,10 @@ export default function EmployeeDashboard() {
       setAttendance(att.data.data);
       setLastPayslip(ps.data.data?.[0]);
       setLeaveBalance(lb.data.data);
+    }).catch(() => {
+      // silently fail — individual sections can show empty state
     }).finally(() => setLoading(false));
-  }, []);
+  }, [user?.employee?.id]); // re-runs when employee ID becomes available
 
   const greeting = () => {
     const h = today.getHours();

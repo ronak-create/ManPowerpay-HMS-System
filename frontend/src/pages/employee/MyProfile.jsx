@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { User, Lock, Building, CreditCard, Save, Eye, EyeOff } from 'lucide-react';
+import { User, Lock, Building, CreditCard, Save, Eye, EyeOff, Loader } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../api/axios';
 import useAuthStore from '../../store/authStore';
@@ -8,11 +8,28 @@ import { format } from 'date-fns';
 
 export default function MyProfile() {
   const { user } = useAuthStore();
-  const emp = user?.employee;
+  const emp = user?.employee; // reactive — updates when AppInit resolves /auth/me
   const [tab, setTab] = useState('info');
   const [showOld, setShowOld] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
+
+  // BUG FIX: employee data arrives asynchronously via AppInit → /auth/me.
+  // Show a skeleton while it loads rather than silently rendering all fields as "—".
+  if (!emp) {
+    return (
+      <div className="space-y-6 max-w-3xl">
+        <div>
+          <h1 className="page-header">My Profile</h1>
+          <p className="page-subtitle">Your account information and settings</p>
+        </div>
+        <div className="card flex items-center justify-center py-16 gap-3 text-gray-400">
+          <Loader size={20} className="animate-spin" />
+          <span className="text-sm font-medium">Loading profile…</span>
+        </div>
+      </div>
+    );
+  }
 
   const changePassword = async (data) => {
     if (data.newPassword !== data.confirm) return toast.error('Passwords do not match');
@@ -26,10 +43,10 @@ export default function MyProfile() {
   };
 
   const tabs = [
-    { id: 'info', label: 'Personal Info', icon: User },
-    { id: 'work', label: 'Work Details', icon: Building },
-    { id: 'bank', label: 'Bank Info', icon: CreditCard },
-    { id: 'password', label: 'Change Password', icon: Lock },
+    { id: 'info',     label: 'Personal Info',    icon: User },
+    { id: 'work',     label: 'Work Details',     icon: Building },
+    { id: 'bank',     label: 'Bank Info',        icon: CreditCard },
+    { id: 'password', label: 'Change Password',  icon: Lock },
   ];
 
   const InfoRow = ({ label, value }) => (
@@ -53,8 +70,10 @@ export default function MyProfile() {
         </div>
         <div>
           <h2 className="font-bold text-gray-900 text-lg">{user?.name}</h2>
-          <p className="text-sm text-gray-500">{emp?.designation || 'Employee'} · {emp?.department?.name}</p>
-          <p className="text-xs text-gray-400 mt-0.5">{emp?.empCode} · Joined {emp?.dateOfJoining ? format(new Date(emp.dateOfJoining), 'dd MMM yyyy') : '—'}</p>
+          <p className="text-sm text-gray-500">{emp.designation || 'Employee'} · {emp.department?.name}</p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {emp.empCode} · Joined {emp.dateOfJoining ? format(new Date(emp.dateOfJoining), 'dd MMM yyyy') : '—'}
+          </p>
         </div>
       </div>
 
@@ -62,7 +81,8 @@ export default function MyProfile() {
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 overflow-x-auto">
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${tab === t.id ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0
+              ${tab === t.id ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
             <t.icon size={14} />
             {t.label}
           </button>
@@ -73,37 +93,37 @@ export default function MyProfile() {
       <div className="card animate-fade-in">
         {tab === 'info' && (
           <div>
-            <InfoRow label="Full Name" value={user?.name} />
-            <InfoRow label="Email" value={user?.email} />
-            <InfoRow label="Mobile" value={user?.mobile} />
-            <InfoRow label="Date of Birth" value={emp?.dateOfBirth ? format(new Date(emp.dateOfBirth), 'dd MMM yyyy') : null} />
-            <InfoRow label="Gender" value={emp?.gender} />
-            <InfoRow label="Address" value={emp?.address} />
-            <InfoRow label="Emergency Contact" value={emp?.emergencyContact} />
-            <InfoRow label="Emergency Phone" value={emp?.emergencyPhone} />
+            <InfoRow label="Full Name"         value={user?.name} />
+            <InfoRow label="Email"             value={user?.email} />
+            <InfoRow label="Mobile"            value={user?.mobile} />
+            <InfoRow label="Date of Birth"     value={emp.dateOfBirth ? format(new Date(emp.dateOfBirth), 'dd MMM yyyy') : null} />
+            <InfoRow label="Gender"            value={emp.gender} />
+            <InfoRow label="Address"           value={emp.address} />
+            <InfoRow label="Emergency Contact" value={emp.emergencyContact} />
+            <InfoRow label="Emergency Phone"   value={emp.emergencyPhone} />
           </div>
         )}
 
         {tab === 'work' && (
           <div>
-            <InfoRow label="Employee Code" value={emp?.empCode} />
-            <InfoRow label="Designation" value={emp?.designation} />
-            <InfoRow label="Department" value={emp?.department?.name} />
-            <InfoRow label="Site" value={emp?.site?.name} />
-            <InfoRow label="Supervisor" value={emp?.supervisor?.user?.name} />
-            <InfoRow label="Date of Joining" value={emp?.dateOfJoining ? format(new Date(emp.dateOfJoining), 'dd MMMM yyyy') : null} />
-            <InfoRow label="PF Account No" value={emp?.pfAccountNo} />
-            <InfoRow label="UAN No" value={emp?.uanNo} />
-            <InfoRow label="ESIC No" value={emp?.esicNo} />
-            <InfoRow label="PAN" value={emp?.pan} />
+            <InfoRow label="Employee Code"  value={emp.empCode} />
+            <InfoRow label="Designation"    value={emp.designation} />
+            <InfoRow label="Department"     value={emp.department?.name} />
+            <InfoRow label="Site"           value={emp.site?.name} />
+            <InfoRow label="Supervisor"     value={emp.supervisor?.user?.name} />
+            <InfoRow label="Date of Joining" value={emp.dateOfJoining ? format(new Date(emp.dateOfJoining), 'dd MMMM yyyy') : null} />
+            <InfoRow label="PF Account No"  value={emp.pfAccountNo} />
+            <InfoRow label="UAN No"         value={emp.uanNo} />
+            <InfoRow label="ESIC No"        value={emp.esicNo} />
+            <InfoRow label="PAN"            value={emp.pan} />
           </div>
         )}
 
         {tab === 'bank' && (
           <div>
-            <InfoRow label="Bank Name" value={emp?.bankName} />
-            <InfoRow label="Account Number" value={emp?.bankAccountNo ? `XXXX XXXX ${emp.bankAccountNo.slice(-4)}` : null} />
-            <InfoRow label="IFSC Code" value={emp?.ifscCode} />
+            <InfoRow label="Bank Name"      value={emp.bankName} />
+            <InfoRow label="Account Number" value={emp.bankAccountNo ? `XXXX XXXX ${emp.bankAccountNo.slice(-4)}` : null} />
+            <InfoRow label="IFSC Code"      value={emp.ifscCode} />
           </div>
         )}
 
@@ -124,7 +144,8 @@ export default function MyProfile() {
             <div>
               <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">New Password</label>
               <div className="relative">
-                <input type={showNew ? 'text' : 'password'} {...register('newPassword', { required: true, minLength: { value: 8, message: 'Min 8 characters' } })}
+                <input type={showNew ? 'text' : 'password'}
+                  {...register('newPassword', { required: true, minLength: { value: 8, message: 'Min 8 characters' } })}
                   className="input-base pr-10" placeholder="Min 8 characters" />
                 <button type="button" onClick={() => setShowNew(!showNew)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
