@@ -5,14 +5,12 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 // ─── ENUMS ────────────────────────────────────────────────────────────────────
 
 enum Role {
   admin
-  supervisor
   employee
 }
 
@@ -88,7 +86,6 @@ model User {
 
   // Relations
   employee       Employee?
-  supervisor     Supervisor?
   auditLogs      AuditLog[]
 
   @@map("users")
@@ -165,7 +162,6 @@ model Site {
   address     String?
   company     Company      @relation(fields: [companyId], references: [id])
   employees   Employee[]
-  supervisors Supervisor[]
 
   @@map("sites")
 }
@@ -202,29 +198,12 @@ model SalaryComponent {
   @@map("salary_components")
 }
 
-// ─── SUPERVISORS ─────────────────────────────────────────────────────────────
-
-model Supervisor {
-  id          String     @id @default(cuid())
-  userId      String     @unique
-  employeeId  String?    // Supervisor may also be an employee (optional)
-  siteId      String?
-  createdAt   DateTime   @default(now())
-
-  user        User       @relation(fields: [userId], references: [id])
-  site        Site?      @relation(fields: [siteId], references: [id])
-  employees   Employee[]
-
-  @@map("supervisors")
-}
-
 // ─── EMPLOYEES ────────────────────────────────────────────────────────────────
 
 model Employee {
   id                 String          @id @default(cuid())
   userId             String          @unique
   empCode            String          @unique
-  supervisorId       String?
   departmentId       String?
   siteId             String?
   salaryTemplateId   String?
@@ -257,12 +236,12 @@ model Employee {
 
   // Documents
   documents          EmployeeDocument[]
+  form16             Form16[]
 
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
 
   user               User            @relation(fields: [userId], references: [id])
-  supervisor         Supervisor?     @relation(fields: [supervisorId], references: [id])
   department         Department?     @relation(fields: [departmentId], references: [id])
   site               Site?           @relation(fields: [siteId], references: [id])
   salaryTemplate     SalaryTemplate? @relation(fields: [salaryTemplateId], references: [id])
@@ -278,13 +257,29 @@ model Employee {
 model EmployeeDocument {
   id          String   @id @default(cuid())
   employeeId  String
-  type        String   // aadhaar | pan | bank_passbook | offer_letter | other
+  type        String   // aadhaar | pan | bank_passbook | offer_letter | other | appointment_letter
   filePath    String
   uploadedAt  DateTime @default(now())
 
   employee    Employee @relation(fields: [employeeId], references: [id])
 
+  @@unique([employeeId, type])
   @@map("employee_documents")
+}
+
+model Form16 {
+  id           String   @id @default(cuid())
+  employeeId   String
+  year         Int      // Financial year end year (e.g. 2026 for FY 2025-26)
+  pdfPath      String?
+  grossSalary  Float
+  totalTDS     Float
+  generatedAt  DateTime @default(now())
+
+  employee     Employee @relation(fields: [employeeId], references: [id])
+
+  @@unique([employeeId, year])
+  @@map("form16")
 }
 
 // ─── ATTENDANCE ───────────────────────────────────────────────────────────────
@@ -295,7 +290,7 @@ model Attendance {
   date             DateTime         @db.Date
   status           AttendanceStatus
   otHours          Float            @default(0)
-  markedById       String?          // Supervisor userId
+  markedById       String?          // Admin userId
   markedAt         DateTime?
   correctedById    String?          // Who corrected it
   correctionReason String?

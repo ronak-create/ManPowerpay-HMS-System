@@ -14,24 +14,15 @@ import AdminDashboard from './pages/admin/Dashboard';
 import AdminLayout from './components/layout/AdminLayout';
 import EmployeeList from './pages/admin/EmployeeList';
 import EmployeeForm from './pages/admin/EmployeeForm';
-import SupervisorList from './pages/admin/SupervisorList';
 import SalaryTemplates from './pages/admin/SalaryTemplates';
 import PayrollRun from './pages/admin/PayrollRun';
 import Reports from './pages/admin/Reports';
 import AuditLogs from './pages/admin/AuditLogs';
 import CompanySettings from './pages/admin/CompanySettings';
 
-// Supervisor
-import SupervisorLayout from './components/layout/SupervisorLayout';
-import SupervisorDashboard from './pages/supervisor/Dashboard';
-import AttendanceEntry from './pages/supervisor/AttendanceEntry';
-import TeamOverview from './pages/supervisor/TeamOverview';
-import LeaveApprovals from './pages/supervisor/LeaveApprovals';
-
 // Employee
 import EmployeeLayout from './components/layout/EmployeeLayout';
 import EmployeeDashboard from './pages/employee/Dashboard';
-import MyAttendance from './pages/employee/MyAttendance';
 import MyPayslips from './pages/employee/MyPayslips';
 import LeaveApplication from './pages/employee/LeaveApplication';
 import MyProfile from './pages/employee/MyProfile';
@@ -74,7 +65,6 @@ export default function App() {
         <Route path="/admin" element={<PrivateRoute role="admin"><AdminLayout /></PrivateRoute>}>
           <Route index element={<AdminDashboard />} />
           <Route path="company" element={<CompanySettings />} />
-          <Route path="supervisors" element={<SupervisorList />} />
           <Route path="employees" element={<EmployeeList />} />
           <Route path="employees/new" element={<EmployeeForm />} />
           <Route path="employees/:id/edit" element={<EmployeeForm />} />
@@ -84,16 +74,8 @@ export default function App() {
           <Route path="audit-logs" element={<AuditLogs />} />
         </Route>
 
-        <Route path="/supervisor" element={<PrivateRoute role="supervisor"><SupervisorLayout /></PrivateRoute>}>
-          <Route index element={<SupervisorDashboard />} />
-          <Route path="attendance" element={<AttendanceEntry />} />
-          <Route path="team" element={<TeamOverview />} />
-          <Route path="leaves" element={<LeaveApprovals />} />
-        </Route>
-
         <Route path="/employee" element={<PrivateRoute role="employee"><EmployeeLayout /></PrivateRoute>}>
           <Route index element={<EmployeeDashboard />} />
-          <Route path="attendance" element={<MyAttendance />} />
           <Route path="payslips" element={<MyPayslips />} />
           <Route path="leaves" element={<LeaveApplication />} />
           <Route path="profile" element={<MyProfile />} />

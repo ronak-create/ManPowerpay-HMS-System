@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard, FileText, Calendar, User, LogOut, ChevronRight, Bell, Briefcase, Menu
+  LayoutDashboard, FileText, User, LogOut, ChevronRight, Bell, Briefcase, Menu
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import MobileSidebar from './MobileSidebar';
@@ -14,7 +14,6 @@ const navGroups = [
   {
     label: 'My Work',
     items: [
-      { to: '/employee/attendance', icon: Calendar, label: 'My Attendance' },
       { to: '/employee/payslips', icon: FileText, label: 'My Payslips' },
     ]
   },

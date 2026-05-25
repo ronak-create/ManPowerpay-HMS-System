@@ -10,7 +10,7 @@ export default function EmployeeForm() {
   const navigate = useNavigate();
   const isEdit = !!id;
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
-  const [meta, setMeta] = useState({ sites: [], departments: [], supervisors: [], templates: [] });
+  const [meta, setMeta] = useState({ sites: [], departments: [], templates: [] });
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('basic');
 
@@ -136,13 +136,6 @@ export default function EmployeeForm() {
                 <select {...register('departmentId')} className="w-full border rounded-lg px-4 py-2">
                   <option value="">Select Department</option>
                   {meta.departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Supervisor</label>
-                <select {...register('supervisorId')} className="w-full border rounded-lg px-4 py-2">
-                  <option value="">Select Supervisor</option>
-                  {meta.supervisors.map(s => <option key={s.id} value={s.id}>{s.user.name}</option>)}
                 </select>
               </div>
               <div>

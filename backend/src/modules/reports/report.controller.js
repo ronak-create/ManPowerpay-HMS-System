@@ -6,21 +6,16 @@ import ApiResponse from '../../utils/ApiResponse.js';
 import asyncHandler from '../../utils/asyncHandler.js';
 
 // ── MONTHLY ATTENDANCE REGISTER ───────────────────────────────────────────────
-// GET /api/reports/attendance?month=6&year=2026&siteId=xxx&supervisorId=xxx
+// GET /api/reports/attendance?month=6&year=2026&siteId=xxx
 export const attendanceReport = asyncHandler(async (req, res) => {
-  const { month, year, siteId, supervisorId, format: fmt = 'json' } = req.query;
+  const { month, year, siteId, format: fmt = 'json' } = req.query;
 
   const where = { isActive: true };
-  if (req.user.role === 'supervisor') {
-    const sup = await prisma.supervisor.findUnique({ where: { userId: req.user.id } });
-    if (sup) where.supervisorId = sup.id;
-  }
   if (siteId) where.siteId = siteId;
-  if (supervisorId) where.supervisorId = supervisorId;
 
   const employees = await prisma.employee.findMany({
     where,
-    include: { user: { select: { name: true } }, site: true, supervisor: { include: { user: { select: { name: true } } } } }
+    include: { user: { select: { name: true } }, site: true }
   });
 
   const startDate = new Date(year, month - 1, 1);
@@ -45,8 +40,7 @@ export const attendanceReport = asyncHandler(async (req, res) => {
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Attendance Register');
 
-    // Header row: Emp Code | Name | Site | 1 | 2 | 3 ... 31 | P | A | H | Total WD
-    const headers = ['Emp Code', 'Name', 'Site', 'Supervisor', ...days.map(d => format(d, 'd')), 'P', 'A', 'H', 'PL', 'WO', 'HO', 'Working Days'];
+    const headers = ['Emp Code', 'Name', 'Site', ...days.map(d => format(d, 'd')), 'P', 'A', 'H', 'PL', 'WO', 'HO', 'Working Days'];
     sheet.addRow(headers);
     sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
     sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E79' } };
@@ -60,11 +54,11 @@ export const attendanceReport = asyncHandler(async (req, res) => {
       const wo = dayStatuses.filter(s => s === 'WO').length;
       const ho = dayStatuses.filter(s => s === 'HO').length;
 
-      sheet.addRow([emp.empCode, emp.user?.name, emp.site?.name || '-', emp.supervisor?.user?.name || '-', ...dayStatuses, p, a, h, pl, wo, ho, p + (h * 0.5) + pl]);
+      sheet.addRow([emp.empCode, emp.user?.name, emp.site?.name || '-', ...dayStatuses, p, a, h, pl, wo, ho, p + (h * 0.5) + pl]);
       if (i % 2 === 0) sheet.getRow(i + 2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } };
     });
 
-    sheet.columns.forEach((col, i) => { col.width = i < 4 ? 18 : 4; });
+    sheet.columns.forEach((col, i) => { col.width = i < 3 ? 18 : 4; });
 
     const buffer = await workbook.xlsx.writeBuffer();
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -96,8 +90,7 @@ export const payrollSummaryReport = asyncHandler(async (req, res) => {
           employee: {
             include: {
               user: { select: { name: true } },
-              department: true, site: true,
-              supervisor: { include: { user: { select: { name: true } } } }
+              department: true, site: true
             }
           }
         }
@@ -110,7 +103,7 @@ export const payrollSummaryReport = asyncHandler(async (req, res) => {
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Payroll Summary');
 
-    const headers = ['Emp Code', 'Name', 'Department', 'Site', 'Supervisor', 'Working Days', 'Days Worked', 'OT Hours', 'LWP Days', 'Gross Pay', 'EPF (EE)', 'ESIC (EE)', 'PT', 'TDS', 'Advance', 'Total Deductions', 'Net Pay'];
+    const headers = ['Emp Code', 'Name', 'Department', 'Site', 'Working Days', 'Days Worked', 'OT Hours', 'LWP Days', 'Gross Pay', 'EPF (EE)', 'ESIC (EE)', 'PT', 'TDS', 'Advance', 'Total Deductions', 'Net Pay'];
     sheet.addRow(headers);
     sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
     sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E79' } };
@@ -119,7 +112,7 @@ export const payrollSummaryReport = asyncHandler(async (req, res) => {
       const getDeduction = (name) => p.deductionsJson.find(d => d.name.toLowerCase().includes(name.toLowerCase()))?.amount || 0;
       sheet.addRow([
         p.employee.empCode, p.employee.user?.name, p.employee.department?.name, p.employee.site?.name,
-        p.employee.supervisor?.user?.name, p.workingDays, p.presentDays, p.otHours, p.lwpDays,
+        p.workingDays, p.presentDays, p.otHours, p.lwpDays,
         p.grossPayable, getDeduction('PF'), getDeduction('ESIC'), getDeduction('Tax'), getDeduction('TDS'),
         getDeduction('Advance'), p.totalDeductions, p.netPay
       ]);
@@ -128,10 +121,10 @@ export const payrollSummaryReport = asyncHandler(async (req, res) => {
 
     // Totals
     const lr = sheet.lastRow.number + 1;
-    sheet.addRow(['', 'TOTAL', '', '', '', '', '', '', '', { formula: `SUM(J2:J${lr - 1})` }, '', '', '', '', '', { formula: `SUM(P2:P${lr - 1})` }, { formula: `SUM(Q2:Q${lr - 1})` }]);
+    sheet.addRow(['', 'TOTAL', '', '', '', '', '', '', '', { formula: `SUM(I2:I${lr - 1})` }, '', '', '', '', '', { formula: `SUM(O2:O${lr - 1})` }, { formula: `SUM(P2:P${lr - 1})` }]);
     sheet.getRow(lr).font = { bold: true };
 
-    sheet.columns.forEach((col, i) => { col.width = i < 5 ? 20 : 14; });
+    sheet.columns.forEach((col, i) => { col.width = i < 4 ? 20 : 14; });
 
     const buffer = await workbook.xlsx.writeBuffer();
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -173,7 +166,6 @@ export const headcountReport = asyncHandler(async (req, res) => {
     include: {
       user: { select: { name: true, email: true, mobile: true } },
       site: true, department: true,
-      supervisor: { include: { user: { select: { name: true } } } },
       salaryTemplate: true
     },
     orderBy: { empCode: 'asc' }
@@ -191,7 +183,6 @@ export const headcountReport = asyncHandler(async (req, res) => {
       { header: 'Designation', key: 'designation', width: 20 },
       { header: 'Department', key: 'dept', width: 18 },
       { header: 'Site', key: 'site', width: 18 },
-      { header: 'Supervisor', key: 'supervisor', width: 20 },
       { header: 'Date of Joining', key: 'doj', width: 15 },
       { header: 'Annual CTC', key: 'ctc', width: 14 },
       { header: 'Status', key: 'status', width: 10 },
@@ -203,7 +194,6 @@ export const headcountReport = asyncHandler(async (req, res) => {
       sheet.addRow({
         empCode: e.empCode, name: e.user?.name, mobile: e.user?.mobile, email: e.user?.email,
         designation: e.designation, dept: e.department?.name, site: e.site?.name,
-        supervisor: e.supervisor?.user?.name,
         doj: e.dateOfJoining ? format(new Date(e.dateOfJoining), 'dd/MM/yyyy') : '',
         ctc: e.annualCTC, status: e.isActive ? 'Active' : 'Inactive'
       });
@@ -258,10 +248,10 @@ export const dashboardStats = asyncHandler(async (req, res) => {
   const today = new Date();
   const todayStr = format(today, 'yyyy-MM-dd');
 
-  const [totalEmployees, activeEmployees, totalSupervisors, currentRun, todayAttendance] = await Promise.all([
+  const [totalEmployees, activeEmployees, totalSites, currentRun, todayAttendance] = await Promise.all([
     prisma.employee.count(),
     prisma.employee.count({ where: { isActive: true } }),
-    prisma.supervisor.count(),
+    prisma.site.count(),
     prisma.payrollRun.findFirst({ orderBy: [{ year: 'desc' }, { month: 'desc' }] }),
     prisma.attendance.findMany({ where: { date: new Date(todayStr) } })
   ]);
@@ -283,30 +273,8 @@ export const dashboardStats = asyncHandler(async (req, res) => {
   );
 
   res.json(new ApiResponse(200, {
-    totalEmployees, activeEmployees, totalSupervisors,
+    totalEmployees, activeEmployees, totalSites,
     presentToday, absentToday, pendingLeaves,
     currentRun, trend: trend.reverse()
-  }));
-});
-
-// ── SUPERVISOR DASHBOARD STATS ────────────────────────────────────────────────
-export const supervisorDashboardStats = asyncHandler(async (req, res) => {
-  const sup = await prisma.supervisor.findUnique({ where: { userId: req.user.id } });
-  if (!sup) throw new ApiError(404, 'Supervisor not found');
-
-  const today = format(new Date(), 'yyyy-MM-dd');
-  const teamIds = (await prisma.employee.findMany({ where: { supervisorId: sup.id, isActive: true }, select: { id: true } })).map(e => e.id);
-
-  const [totalTeam, todayAttendance, pendingLeaves] = await Promise.all([
-    teamIds.length,
-    prisma.attendance.findMany({ where: { employeeId: { in: teamIds }, date: new Date(today) } }),
-    prisma.leaveRequest.count({ where: { employeeId: { in: teamIds }, status: 'pending' } })
-  ]);
-
-  res.json(new ApiResponse(200, {
-    totalTeam,
-    presentToday: todayAttendance.filter(a => a.status === 'P').length,
-    absentToday: todayAttendance.filter(a => a.status === 'A').length,
-    pendingLeaves
   }));
 });

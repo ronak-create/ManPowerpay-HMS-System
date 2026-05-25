@@ -15,44 +15,42 @@ export function calculatePayroll({ employee, attendance, company, ptSlabs, tdsIn
   const { workingDays, daysWorked, otHours, lwpDays } = attendance;
 
   const monthlyCTC = annualCTC / 12;
-
-  // Step 1: Pro-rate gross
   const proRateFactor = workingDays > 0 ? daysWorked / workingDays : 0;
-  const baseGross = monthlyCTC * proRateFactor;
 
-  // Step 2: Compute component values in sequence order
   const components = [...(salaryTemplate?.components || [])].sort((a, b) => a.sequence - b.sequence);
   const earnings = [];
   const deductions = [];
   const employerContrib = [];
 
-  let basicPayable = 0;
-
-  // Find basic component to compute OT
+  // Step 1: Compute basic pay (Full and Actual pro-rated)
   const basicComp = components.find(c => c.name.toLowerCase() === 'basic' && c.type === 'earning');
+  let basicFull = 0;
   if (basicComp) {
     if (basicComp.basis === 'percent_of_gross') {
-      basicPayable = baseGross * (basicComp.value / 100);
+      basicFull = monthlyCTC * (basicComp.value / 100);
     } else if (basicComp.basis === 'fixed') {
-      basicPayable = basicComp.value * proRateFactor;
+      basicFull = basicComp.value;
     }
   }
+  const basicActual = round(basicFull * proRateFactor);
 
-  // OT earnings
-  const otRate = basicPayable > 0 ? (basicPayable / 26 / 8) * (company.otMultiplier || 2) : 0;
-  const otEarnings = otRate * (otHours || 0);
+  // Step 2: OT earnings (based on full basic)
+  const otRate = basicFull > 0 ? (basicFull / 26 / 8) * (company.otMultiplier || 2) : 0;
+  const otEarnings = round(otRate * (otHours || 0));
 
-  const grossPayable = baseGross + otEarnings;
+  // Step 3: Total Gross (Full monthly + OT)
+  const grossFull = round(monthlyCTC + otEarnings);
+  const lwpDeduction = round(monthlyCTC * (1 - proRateFactor));
 
-  // Rebuild earnings breakdown
+  // Step 4: Rebuild earnings breakdown (Full values)
   components.filter(c => c.type === 'earning').forEach(c => {
     let amount = 0;
     if (c.name.toLowerCase() === 'basic') {
-      amount = basicPayable;
+      amount = basicFull;
     } else if (c.basis === 'percent_of_basic') {
-      amount = basicPayable * (c.value / 100);
+      amount = basicFull * (c.value / 100);
     } else if (c.basis === 'percent_of_gross') {
-      amount = grossPayable * (c.value / 100);
+      amount = monthlyCTC * (c.value / 100);
     } else if (c.basis === 'fixed') {
       amount = c.value;
     } else if (c.basis === 'ot_formula') {
@@ -61,20 +59,26 @@ export function calculatePayroll({ employee, attendance, company, ptSlabs, tdsIn
     if (amount > 0) earnings.push({ name: c.name, amount: round(amount) });
   });
 
-  // Add OT as separate line if not already in components
   if (otEarnings > 0 && !components.find(c => c.basis === 'ot_formula')) {
     earnings.push({ name: 'Overtime', amount: round(otEarnings) });
   }
 
-  // Step 3: Deductions
+  // Step 5: Deductions
+  if (lwpDeduction > 0) {
+    deductions.push({ name: `LWP Deduction (${lwpDays} days)`, amount: lwpDeduction });
+  }
+
+  // Statutory on pro-rated basic/gross
+  const grossActual = round(monthlyCTC * proRateFactor + otEarnings);
+  
   // EPF Employee
-  const epfEE = round(0.12 * Math.min(basicPayable, 15000));
+  const epfEE = round(0.12 * Math.min(basicActual, 15000));
 
   // ESIC Employee
-  const esicEE = grossPayable <= 21000 ? round(0.0075 * grossPayable) : 0;
+  const esicEE = grossActual <= 21000 ? round(0.0075 * grossActual) : 0;
 
   // PT
-  const ptAmount = computePT(grossPayable, ptSlabs);
+  const ptAmount = computePT(grossActual, ptSlabs);
 
   // TDS
   let tds = 0;
@@ -88,17 +92,17 @@ export function calculatePayroll({ employee, attendance, company, ptSlabs, tdsIn
   if (tds > 0) deductions.push({ name: 'TDS / Income Tax', amount: tds });
   if (advanceEmi > 0) deductions.push({ name: 'Salary Advance Recovery', amount: advanceEmi });
 
-  // Employer contributions (shown in CTC)
-  const epfER = round(0.12 * Math.min(basicPayable, 15000));
-  const esicER = grossPayable <= 21000 ? round(0.0325 * grossPayable) : 0;
+  // Employer contributions (on actual pro-rated values)
+  const epfER = round(0.12 * Math.min(basicActual, 15000));
+  const esicER = grossActual <= 21000 ? round(0.0325 * grossActual) : 0;
   if (epfER > 0) employerContrib.push({ name: 'Employer PF', amount: epfER });
   if (esicER > 0) employerContrib.push({ name: 'Employer ESIC', amount: esicER });
 
   const totalDeductions = deductions.reduce((s, d) => s + d.amount, 0);
-  const netPay = round(grossPayable - totalDeductions);
+  const netPay = round(grossFull - totalDeductions);
 
   return {
-    grossPayable: round(grossPayable),
+    grossPayable: grossFull,
     totalDeductions: round(totalDeductions),
     netPay,
     earningsJson: earnings,
@@ -109,7 +113,7 @@ export function calculatePayroll({ employee, attendance, company, ptSlabs, tdsIn
     otHours: otHours || 0,
     lwpDays: lwpDays || 0,
     tdsThisMonth: tds,
-    basicPayable: round(basicPayable)
+    basicPayable: basicActual
   };
 }
 

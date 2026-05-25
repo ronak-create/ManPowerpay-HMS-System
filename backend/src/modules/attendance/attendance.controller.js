@@ -19,20 +19,12 @@ async function isDateLocked(date) {
 }
 
 // GET /api/attendance/team?month=6&year=2026
-// Supervisor: gets full month grid for their team
+// Admin: gets full month grid for all active employees
 export const getTeamAttendance = asyncHandler(async (req, res) => {
   const { month, year } = req.query;
   if (!month || !year) throw new ApiError(400, 'month and year are required');
 
-  let supervisorId = null;
-  if (req.user.role === 'supervisor') {
-    const sup = await prisma.supervisor.findUnique({ where: { userId: req.user.id } });
-    if (!sup) throw new ApiError(403, 'Supervisor record not found');
-    supervisorId = sup.id;
-  }
-
   const whereEmp = { isActive: true };
-  if (supervisorId) whereEmp.supervisorId = supervisorId;
 
   const employees = await prisma.employee.findMany({
     where: whereEmp,
@@ -116,7 +108,7 @@ export const getEmployeeAttendance = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, { calendar, summary: { present, halfDay, absent, paidLeave, totalOT } }));
 });
 
-// POST /api/attendance/bulk — Supervisor marks attendance for their team
+// POST /api/attendance/bulk — Admin marks attendance
 export const markBulkAttendance = asyncHandler(async (req, res) => {
   // Body: { date: "2026-06-15", records: [{ employeeId, status, otHours }] }
   const { date, records } = req.body;
@@ -129,16 +121,6 @@ export const markBulkAttendance = asyncHandler(async (req, res) => {
 
   if (attendanceDate > today) throw new ApiError(400, 'Cannot mark future attendance');
   if (await isDateLocked(attendanceDate)) throw new ApiError(400, 'Attendance for this month is locked (payroll has been processed)');
-
-  // Verify supervisor owns these employees
-  const sup = await prisma.supervisor.findUnique({ where: { userId: req.user.id } });
-  if (!sup && req.user.role !== 'admin') throw new ApiError(403, 'Unauthorized');
-
-  if (req.user.role === 'supervisor') {
-    const teamIds = (await prisma.employee.findMany({ where: { supervisorId: sup.id }, select: { id: true } })).map(e => e.id);
-    const unauthorized = records.filter(r => !teamIds.includes(r.employeeId));
-    if (unauthorized.length) throw new ApiError(403, 'Some employees are not in your team');
-  }
 
   const daysDiff = differenceInDays(today, attendanceDate);
 

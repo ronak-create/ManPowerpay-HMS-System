@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, UserCog, Settings, FileText,
+  LayoutDashboard, Users, Settings, FileText,
   DollarSign, BarChart2, ClipboardList, LogOut, ChevronRight,
   Bell, Menu
 } from 'lucide-react';
@@ -17,7 +17,6 @@ const navGroups = [
     label: 'People',
     items: [
       { to: '/admin/employees', icon: Users, label: 'Employees' },
-      { to: '/admin/supervisors', icon: UserCog, label: 'Supervisors' },
     ]
   },
   {

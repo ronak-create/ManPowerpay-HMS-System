@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { User, Lock, Building, CreditCard, Save, Eye, EyeOff, Loader } from 'lucide-react';
+import { User, Lock, Building, CreditCard, Save, Eye, EyeOff, Loader, FileText, Download, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import api from '../../api/axios';
@@ -13,6 +13,8 @@ export default function MyProfile() {
   const [showOld, setShowOld] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
+  const [downloading, setDownloading] = useState(null);
+  const [fyYear, setFyYear] = useState(new Date().getFullYear());
 
   // Still waiting for /auth/me to resolve
   if (!authReady) {
@@ -61,10 +63,34 @@ export default function MyProfile() {
     }
   };
 
+  const downloadDoc = async (type, label) => {
+    setDownloading(type);
+    try {
+      let endpoint = '';
+      if (type === 'appointment') endpoint = `/employees/${emp.id}/appointment-letter`;
+      if (type === 'relieving') endpoint = `/employees/${emp.id}/relieving-letter`;
+      if (type === 'form16') endpoint = `/form16/${emp.id}?year=${fyYear}`;
+      
+      const res = await api.get(endpoint, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${label}_${emp.empCode}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      toast.error('Document not available yet. Contact HR.');
+    } finally {
+      setDownloading(null);
+    }
+  };
+
   const tabs = [
     { id: 'info',     label: 'Personal Info',    icon: User },
     { id: 'work',     label: 'Work Details',      icon: Building },
     { id: 'bank',     label: 'Bank Info',         icon: CreditCard },
+    { id: 'docs',     label: 'Documents',         icon: FileText },
     { id: 'password', label: 'Change Password',   icon: Lock },
   ];
 
@@ -137,7 +163,6 @@ export default function MyProfile() {
             <InfoRow label="Designation"   value={emp.designation} />
             <InfoRow label="Department"    value={emp.department?.name} />
             <InfoRow label="Site"          value={emp.site?.name} />
-            <InfoRow label="Supervisor"    value={emp.supervisor?.user?.name} />
             <InfoRow label="Date of Joining" value={emp.dateOfJoining ? format(new Date(emp.dateOfJoining), 'dd MMMM yyyy') : null} />
             <InfoRow label="PF Account No" value={emp.pfAccountNo} />
             <InfoRow label="UAN No"        value={emp.uanNo} />
@@ -151,6 +176,83 @@ export default function MyProfile() {
             <InfoRow label="Bank Name"      value={emp.bankName} />
             <InfoRow label="Account Number" value={emp.bankAccountNo ? `XXXX XXXX ${emp.bankAccountNo.slice(-4)}` : null} />
             <InfoRow label="IFSC Code"      value={emp.ifscCode} />
+          </div>
+        )}
+
+        {tab === 'docs' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
+                  <FileText size={20} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">Appointment Letter</p>
+                  <p className="text-xs text-gray-400 font-medium">Issued upon joining</p>
+                </div>
+              </div>
+              <button
+                onClick={() => downloadDoc('appointment', 'appointment_letter')}
+                disabled={downloading === 'appointment'}
+                className="btn-secondary py-1.5 px-3 text-xs"
+              >
+                {downloading === 'appointment' ? <Loader size={14} className="animate-spin" /> : <Download size={14} />}
+                Download
+              </button>
+            </div>
+
+            {emp.dateOfLeaving && (
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
+                    <CheckCircle size={20} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">Relieving Letter</p>
+                    <p className="text-xs text-gray-400 font-medium">Issued on offboarding</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => downloadDoc('relieving', 'relieving_letter')}
+                  disabled={downloading === 'relieving'}
+                  className="btn-secondary py-1.5 px-3 text-xs"
+                >
+                  {downloading === 'relieving' ? <Loader size={14} className="animate-spin" /> : <Download size={14} />}
+                  Download
+                </button>
+              </div>
+            )}
+
+            <div className="p-4 border border-gray-100 rounded-xl space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600">
+                    <IndianRupee size={20} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">Form 16 (Salary Certificate)</p>
+                    <p className="text-xs text-gray-400 font-medium">Annual Tax Statement</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={fyYear}
+                    onChange={(e) => setFyYear(Number(e.target.value))}
+                    className="input-base py-1 px-2 text-xs w-24"
+                  >
+                    {[2024, 2025, 2026].map(y => <option key={y} value={y}>FY {y-1}-{String(y).slice(-2)}</option>)}
+                  </select>
+                  <button
+                    onClick={() => downloadDoc('form16', `Form16_${fyYear}`)}
+                    disabled={downloading === 'form16'}
+                    className="btn-primary py-1.5 px-3 text-xs"
+                  >
+                    {downloading === 'form16' ? <Loader size={14} className="animate-spin" /> : <Download size={14} />}
+                    Download
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

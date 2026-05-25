@@ -11,8 +11,7 @@ export function useAuth() {
   };
 
   const isAdmin = user?.role === 'admin';
-  const isSupervisor = user?.role === 'supervisor';
   const isEmployee = user?.role === 'employee';
 
-  return { user, token, login, logout: signOut, isAdmin, isSupervisor, isEmployee };
+  return { user, token, login, logout: signOut, isAdmin, isEmployee };
 }

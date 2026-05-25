@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import {
   FileText,
-  Calendar,
   Clock,
   TrendingUp,
   ChevronRight,
@@ -12,16 +11,15 @@ import { Link } from "react-router-dom";
 import api from "../../api/axios";
 import useAuthStore from "../../store/authStore";
 import { formatINR, MONTH_NAMES } from "../../utils/formatCurrency";
-import { StatusBadge } from "../../components/ui/Badge";
+import EmployeeIDCard from "../../components/employee/EmployeeIDCard";
 
 export default function EmployeeDashboard() {
   const { user, authReady } = useAuthStore();
-  const [attendance, setAttendance] = useState(null);
   const [lastPayslip, setLastPayslip] = useState(null);
   const [leaveBalance, setLeaveBalance] = useState([]);
+  const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);
   const today = new Date();
-  const month = today.getMonth() + 1;
   const year = today.getFullYear();
 
   useEffect(() => {
@@ -34,14 +32,14 @@ export default function EmployeeDashboard() {
 
     setLoading(true);
     Promise.all([
-      api.get(`/attendance/employee/${empId}?month=${month}&year=${year}`),
       api.get(`/payslips?year=${year}`),
       api.get(`/leaves/balance/${empId}?year=${year}`),
+      api.get('/company')
     ])
-      .then(([att, ps, lb]) => {
-        setAttendance(att.data.data);
+      .then(([ps, lb, comp]) => {
         setLastPayslip(ps.data.data?.[0]);
         setLeaveBalance(lb.data.data);
+        setCompany(comp.data.data);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -61,119 +59,75 @@ export default function EmployeeDashboard() {
       </div>
     );
 
-  const s = attendance?.summary || {};
-
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Hero greeting */}
-      <div className="bg-gradient-primary rounded-2xl p-6 text-white relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-48 h-48 bg-white/5 rounded-full -translate-y-12 translate-x-12" />
-        <div className="absolute right-12 bottom-0 w-24 h-24 bg-white/5 rounded-full translate-y-8" />
-        <div className="relative">
-          <p className="text-white/70 text-sm font-medium">{greeting()},</p>
-          <h1 className="text-2xl font-black mt-0.5">{user?.name} 👋</h1>
-          <p className="text-white/60 text-sm mt-1">
-            {format(today, "EEEE, d MMMM yyyy")}
-          </p>
-        </div>
-      </div>
-
-      {/* Attendance summary */}
-      <div>
-        <h2 className="section-title">
-          This Month — {MONTH_NAMES[month - 1]} {year}
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: "Present", value: s.present ?? 0, color: "from-green-500 to-emerald-600", icon: "✅" },
-            { label: "Absent", value: s.absent ?? 0, color: "from-red-500 to-rose-600", icon: "❌" },
-            { label: "Half Days", value: s.halfDay ?? 0, color: "from-amber-500 to-orange-500", icon: "🌗" },
-            { label: "OT Hours", value: s.totalOT ?? 0, color: "from-blue-500 to-indigo-600", icon: "⏱" },
-          ].map((c) => (
-            <div key={c.label} className={`bg-gradient-to-br ${c.color} rounded-2xl p-4 text-white shadow-card`}>
-              <div className="text-2xl mb-1">{c.icon}</div>
-              <div className="text-2xl font-black">{c.value}</div>
-              <div className="text-white/80 text-xs font-medium">{c.label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Last payslip */}
-        {lastPayslip ? (
-          <div className="card">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-800">Latest Payslip</h3>
-              <Link to="/employee/payslips" className="text-xs text-primary font-semibold hover:underline flex items-center gap-1">
-                View all <ChevronRight size={13} />
-              </Link>
-            </div>
-            <div className="bg-gradient-primary rounded-xl p-4 text-white mb-4">
-              <p className="text-white/70 text-xs">
-                {MONTH_NAMES[lastPayslip.month - 1]} {lastPayslip.year}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left 2 cols: Welcome + Stats */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Hero greeting */}
+          <div className="bg-gradient-primary rounded-2xl p-6 text-white relative overflow-hidden h-40 flex flex-col justify-center">
+            <div className="absolute right-0 top-0 w-48 h-48 bg-white/5 rounded-full -translate-y-12 translate-x-12" />
+            <div className="relative">
+              <p className="text-white/70 text-sm font-medium">{greeting()},</p>
+              <h1 className="text-3xl font-black mt-0.5">{user?.name} 👋</h1>
+              <p className="text-white/60 text-sm mt-1">
+                {format(today, "EEEE, d MMMM yyyy")}
               </p>
-              <p className="text-3xl font-black mt-0.5">{formatINR(lastPayslip.netPay)}</p>
-              <p className="text-white/60 text-xs mt-1">Take-home pay</p>
-            </div>
-            <div className="grid grid-cols-3 gap-3 text-center">
-              <div className="bg-gray-50 rounded-xl p-3">
-                <p className="text-xs text-gray-500">Gross</p>
-                <p className="font-bold text-gray-800 text-sm mt-0.5">{formatINR(lastPayslip.grossPayable)}</p>
-              </div>
-              <div className="bg-gray-50 rounded-xl p-3">
-                <p className="text-xs text-gray-500">Deductions</p>
-                <p className="font-bold text-red-600 text-sm mt-0.5">{formatINR(lastPayslip.totalDeductions)}</p>
-              </div>
-              <div className="bg-gray-50 rounded-xl p-3">
-                <p className="text-xs text-gray-500">Days</p>
-                <p className="font-bold text-gray-800 text-sm mt-0.5">{lastPayslip.presentDays}</p>
-              </div>
             </div>
           </div>
-        ) : (
-          <div className="card flex flex-col items-center justify-center py-8 text-center">
-            <FileText size={32} className="text-gray-300 mb-2" />
-            <p className="text-sm text-gray-500">No payslips yet</p>
-          </div>
-        )}
 
-        {/* Leave balances */}
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-800">Leave Balance {year}</h3>
-            <Link to="/employee/leaves" className="text-xs text-primary font-semibold hover:underline flex items-center gap-1">
-              Apply <ChevronRight size={13} />
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {leaveBalance.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-4">Leave balance not initialized yet</p>
-            ) : (
-              leaveBalance.map((b) => {
-                const pct = b.total > 0 ? (b.used / b.total) * 100 : 0;
-                const colors = { CL: "bg-blue-500", PL: "bg-green-500", SL: "bg-amber-500", LWP: "bg-gray-400" };
-                return (
-                  <div key={b.leaveType} className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
-                      <span className="text-xs font-black text-gray-600">{b.leaveType}</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs font-semibold text-gray-700">
-                          {b.leaveType === "CL" ? "Casual Leave" : b.leaveType === "PL" ? "Privilege Leave" : b.leaveType === "SL" ? "Sick Leave" : "Leave Without Pay"}
-                        </span>
-                        <span className="text-xs text-gray-500">{b.balance} left</span>
-                      </div>
-                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full ${colors[b.leaveType] || "bg-gray-400"}`} style={{ width: `${pct}%` }} />
-                      </div>
-                      <p className="text-[10px] text-gray-400 mt-0.5">{b.used} used of {b.total} total</p>
-                    </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {/* Last payslip preview */}
+            {lastPayslip ? (
+              <div className="card">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-gray-800 uppercase tracking-wider text-xs">Latest Payslip</h3>
+                  <Link to="/employee/payslips" className="text-[10px] text-primary font-bold hover:underline flex items-center gap-1">
+                    VIEW ALL <ChevronRight size={12} />
+                  </Link>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4 flex items-center justify-between border border-gray-100">
+                  <div>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase">{MONTH_NAMES[lastPayslip.month - 1]} {lastPayslip.year}</p>
+                    <p className="text-2xl font-black text-gray-900 mt-0.5">{formatINR(lastPayslip.netPay)}</p>
                   </div>
-                );
-              })
+                  <div className="w-10 h-10 rounded-lg bg-green-100 text-green-600 flex items-center justify-center">
+                    <FileText size={20} />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="card flex flex-col items-center justify-center text-center py-10 bg-gray-50/50 border-dashed">
+                <FileText size={32} className="text-gray-200 mb-2" />
+                <p className="text-xs text-gray-400 font-medium">No payslips yet</p>
+              </div>
             )}
+
+            {/* Leave balance preview */}
+            <div className="card">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-gray-800 uppercase tracking-wider text-xs">Leave Balance</h3>
+                <Link to="/employee/leaves" className="text-[10px] text-primary font-bold hover:underline flex items-center gap-1">
+                  APPLY <ChevronRight size={12} />
+                </Link>
+              </div>
+              <div className="flex gap-2">
+                {leaveBalance.slice(0, 3).map(b => (
+                  <div key={b.leaveType} className="flex-1 bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase">{b.leaveType}</p>
+                    <p className="text-lg font-black text-primary">{b.balance}</p>
+                  </div>
+                ))}
+                {leaveBalance.length === 0 && <p className="text-xs text-gray-400 py-2">Not initialised</p>}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right col: ID Card */}
+        <div className="lg:col-span-1">
+          <div className="card h-full">
+            <EmployeeIDCard user={user} employee={user?.employee} company={company} />
           </div>
         </div>
       </div>
@@ -181,9 +135,8 @@ export default function EmployeeDashboard() {
       {/* Quick actions */}
       <div>
         <h2 className="section-title">Quick Actions</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {[
-            { to: "/employee/attendance", icon: "📅", label: "View Attendance", color: "hover:border-blue-300 hover:bg-blue-50/40" },
             { to: "/employee/payslips", icon: "📄", label: "Download Payslip", color: "hover:border-green-300 hover:bg-green-50/40" },
             { to: "/employee/leaves", icon: "🏖", label: "Apply Leave", color: "hover:border-amber-300 hover:bg-amber-50/40" },
             { to: "/employee/profile", icon: "👤", label: "My Profile", color: "hover:border-purple-300 hover:bg-purple-50/40" },

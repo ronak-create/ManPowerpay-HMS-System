@@ -83,10 +83,7 @@ export const getMe = asyncHandler(async (req, res) => {
   const user = req.user;
   let extra = {};
   if (user.role === 'employee') {
-    extra.employee = await prisma.employee.findUnique({ where: { userId: user.id }, include: { site: true, department: true, supervisor: { include: { user: true } } } });
-  }
-  if (user.role === 'supervisor') {
-    extra.supervisor = await prisma.supervisor.findUnique({ where: { userId: user.id }, include: { site: true } });
+    extra.employee = await prisma.employee.findUnique({ where: { userId: user.id }, include: { site: true, department: true } });
   }
   res.json(new ApiResponse(200, { id: user.id, name: user.name, email: user.email, role: user.role, ...extra }));
 });

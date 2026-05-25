@@ -1,20 +1,116 @@
+import ExcelJS from 'exceljs';
+import path from 'path';
+import fs from 'fs';
 import prisma from '../../config/db.js';
 import bcrypt from 'bcryptjs';
 import ApiError from '../../utils/ApiError.js';
 import ApiResponse from '../../utils/ApiResponse.js';
 import asyncHandler from '../../utils/asyncHandler.js';
 import { logAudit } from '../../utils/auditLog.js';
+import { generateAppointmentLetterPDF } from '../../utils/appointmentLetterGenerator.js';
+import { generateRelievingLetterPDF } from '../../utils/relievingLetterGenerator.js';
 
-// GET /api/employees — List all employees (Admin) or own team (Supervisor)
+// GET /api/employees/bulk-template
+export const downloadBulkTemplate = asyncHandler(async (req, res) => {
+  const filePath = path.join(process.cwd(), 'uploads/templates/employee_bulk_template.xlsx');
+  if (!fs.existsSync(filePath)) {
+    // Generate on the fly if missing
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Employees');
+    sheet.columns = [
+      { header: 'Employee Name', key: 'name', width: 25 },
+      { header: 'Employee ID', key: 'empCode', width: 15 },
+      { header: 'Email', key: 'email', width: 25 },
+      { header: 'Mobile', key: 'mobile', width: 15 },
+      { header: 'Designation', key: 'designation', width: 20 },
+      { header: 'Department', key: 'department', width: 20 },
+      { header: 'Site', key: 'site', width: 20 },
+      { header: 'Joining Date (YYYY-MM-DD)', key: 'doj', width: 25 },
+      { header: 'Annual CTC', key: 'annualCTC', width: 15 },
+    ];
+    sheet.addRow({ name: 'John Doe', empCode: 'EMP101', email: 'john@example.com', mobile: '9876543210', designation: 'Software Engineer', department: 'Engineering', site: 'Head Office', doj: '2024-01-01', annualCTC: '600000' });
+    await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+    await workbook.xlsx.writeFile(filePath);
+  }
+  res.download(filePath);
+});
+
+// POST /api/employees/bulk-upload
+export const bulkUploadEmployees = asyncHandler(async (req, res) => {
+  if (!req.file) throw new ApiError(400, 'No file uploaded');
+
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(req.file.buffer);
+  const sheet = workbook.getWorksheet(1);
+
+  const results = { created: 0, failed: [] };
+  const rows = [];
+  sheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) return; // skip header
+    rows.push({
+      rowNumber,
+      name: row.getCell(1).text,
+      empCode: row.getCell(2).text,
+      email: row.getCell(3).text,
+      mobile: row.getCell(4).text,
+      designation: row.getCell(5).text,
+      department: row.getCell(6).text,
+      site: row.getCell(7).text,
+      doj: row.getCell(8).text,
+      annualCTC: row.getCell(9).text
+    });
+  });
+
+  const hash = await bcrypt.hash('Welcome@1234', 12);
+
+  for (const r of rows) {
+    try {
+      if (!r.name || !r.email || !r.mobile || !r.empCode) {
+        throw new Error('Missing required fields');
+      }
+
+      // Check unique
+      const existing = await prisma.user.findFirst({
+        where: { OR: [{ email: r.email.toLowerCase() }, { mobile: r.mobile }] }
+      });
+      if (existing) throw new Error('Email or mobile already exists');
+
+      const empExisting = await prisma.employee.findUnique({ where: { empCode: r.empCode } });
+      if (empExisting) throw new Error('Employee code already exists');
+
+      // Lookups
+      const dept = await prisma.department.findFirst({ where: { name: { equals: r.department, mode: 'insensitive' } } });
+      const site = await prisma.site.findFirst({ where: { name: { equals: r.site, mode: 'insensitive' } } });
+
+      await prisma.$transaction(async (tx) => {
+        const user = await tx.user.create({
+          data: { name: r.name, email: r.email.toLowerCase(), mobile: r.mobile, passwordHash: hash, role: 'employee' }
+        });
+        await tx.employee.create({
+          data: {
+            userId: user.id, empCode: r.empCode,
+            departmentId: dept?.id, siteId: site?.id,
+            designation: r.designation,
+            dateOfJoining: new Date(r.doj),
+            annualCTC: Number(r.annualCTC) || 0
+          }
+        });
+      });
+      results.created++;
+    } catch (err) {
+      results.failed.push({ row: r.rowNumber, empCode: r.empCode, reason: err.message });
+    }
+  }
+
+  res.json(new ApiResponse(200, results, 'Bulk upload completed'));
+});
+
+// GET /api/employees — List all employees
 export const listEmployees = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 50, search, siteId, supervisorId, isActive } = req.query;
+  const { page = 1, limit = 50, search, siteId, isActive } = req.query;
   const skip = (page - 1) * limit;
 
   const where = {};
-  if (req.user.role === 'supervisor') {
-    const sup = await prisma.supervisor.findUnique({ where: { userId: req.user.id } });
-    where.supervisorId = sup.id;
-  }
   if (search) {
     where.OR = [
       { empCode: { contains: search, mode: 'insensitive' } },
@@ -23,13 +119,12 @@ export const listEmployees = asyncHandler(async (req, res) => {
     ];
   }
   if (siteId) where.siteId = siteId;
-  if (supervisorId) where.supervisorId = supervisorId;
   if (isActive !== undefined) where.isActive = isActive === 'true';
 
   const [employees, total] = await Promise.all([
     prisma.employee.findMany({
       where, skip: Number(skip), take: Number(limit),
-      include: { user: { select: { name: true, email: true, mobile: true } }, site: true, department: true, supervisor: { include: { user: { select: { name: true } } } }, salaryTemplate: true },
+      include: { user: { select: { name: true, email: true, mobile: true } }, site: true, department: true, salaryTemplate: true },
       orderBy: { createdAt: 'desc' }
     }),
     prisma.employee.count({ where })
@@ -45,7 +140,6 @@ export const getEmployee = asyncHandler(async (req, res) => {
     include: {
       user: { select: { name: true, email: true, mobile: true, isActive: true } },
       site: true, department: true,
-      supervisor: { include: { user: { select: { name: true } } } },
       salaryTemplate: { include: { components: { orderBy: { sequence: 'asc' } } } },
       documents: true
     }
@@ -58,7 +152,7 @@ export const getEmployee = asyncHandler(async (req, res) => {
 export const createEmployee = asyncHandler(async (req, res) => {
   const {
     name, email, mobile, password,
-    empCode, supervisorId, departmentId, siteId, salaryTemplateId,
+    empCode, departmentId, siteId, salaryTemplateId,
     designation, dateOfJoining, annualCTC,
     dateOfBirth, gender, address, emergencyContact, emergencyPhone,
     pfAccountNo, esicNo, pan, aadhaarNo, uanNo,
@@ -79,7 +173,7 @@ export const createEmployee = asyncHandler(async (req, res) => {
     });
     const emp = await tx.employee.create({
       data: {
-        userId: user.id, empCode, supervisorId, departmentId, siteId, salaryTemplateId,
+        userId: user.id, empCode, departmentId, siteId, salaryTemplateId,
         designation, dateOfJoining: new Date(dateOfJoining), annualCTC: Number(annualCTC) || 0,
         dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
         gender, address, emergencyContact, emergencyPhone,
@@ -101,7 +195,7 @@ export const updateEmployee = asyncHandler(async (req, res) => {
 
   const oldValue = { ...emp };
   const {
-    name, mobile, supervisorId, departmentId, siteId, salaryTemplateId,
+    name, mobile, departmentId, siteId, salaryTemplateId,
     designation, annualCTC, dateOfBirth, gender, address,
     emergencyContact, emergencyPhone, pfAccountNo, esicNo, pan, aadhaarNo, uanNo,
     bankName, bankAccountNo, ifscCode
@@ -112,7 +206,7 @@ export const updateEmployee = asyncHandler(async (req, res) => {
     prisma.employee.update({
       where: { id: req.params.id },
       data: {
-        supervisorId, departmentId, siteId, salaryTemplateId,
+        departmentId, siteId, salaryTemplateId,
         designation, annualCTC: Number(annualCTC) || emp.annualCTC,
         dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : emp.dateOfBirth,
         gender, address, emergencyContact, emergencyPhone,
@@ -153,11 +247,79 @@ export const uploadDocument = asyncHandler(async (req, res) => {
 
 // GET /api/employees/meta — for dropdowns
 export const getMeta = asyncHandler(async (req, res) => {
-  const [sites, departments, supervisors, templates] = await Promise.all([
+  const [sites, departments, templates] = await Promise.all([
     prisma.site.findMany({ orderBy: { name: 'asc' } }),
     prisma.department.findMany({ orderBy: { name: 'asc' } }),
-    prisma.supervisor.findMany({ include: { user: { select: { name: true } } } }),
     prisma.salaryTemplate.findMany({ orderBy: { name: 'asc' } })
   ]);
-  res.json(new ApiResponse(200, { sites, departments, supervisors, templates }));
+  res.json(new ApiResponse(200, { sites, departments, templates }));
+});
+
+// POST /api/employees/:id/appointment-letter
+export const generateAppointmentLetter = asyncHandler(async (req, res) => {
+  const employee = await prisma.employee.findUnique({
+    where: { id: req.params.id },
+    include: { user: { select: { name: true } } }
+  });
+  if (!employee) throw new ApiError(404, 'Employee not found');
+
+  const company = await prisma.company.findFirst();
+  if (!company) throw new ApiError(404, 'Company not configured');
+
+  const pdfBuffer = await generateAppointmentLetterPDF(employee, company);
+  const fileName = `${employee.empCode}_appointment.pdf`;
+  const relativePath = `uploads/documents/${fileName}`;
+  const filePath = path.join(process.cwd(), relativePath);
+
+  await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+  await fs.promises.writeFile(filePath, pdfBuffer);
+
+  await prisma.employeeDocument.upsert({
+    where: { employeeId_type: { employeeId: employee.id, type: 'appointment_letter' } },
+    update: { filePath: relativePath, uploadedAt: new Date() },
+    create: { employeeId: employee.id, type: 'appointment_letter', filePath: relativePath }
+  });
+
+  res.json(new ApiResponse(200, { filePath: relativePath }, 'Appointment letter generated'));
+});
+
+// GET /api/employees/:id/relieving-letter
+export const downloadRelievingLetter = asyncHandler(async (req, res) => {
+  const employeeId = req.params.id;
+  if (req.user.role === 'employee') {
+    const emp = await prisma.employee.findUnique({ where: { userId: req.user.id } });
+    if (!emp || emp.id !== employeeId) throw new ApiError(403, 'Unauthorized');
+  }
+
+  const employee = await prisma.employee.findUnique({
+    where: { id: employeeId },
+    include: { user: { select: { name: true } } }
+  });
+  if (!employee) throw new ApiError(404, 'Employee not found');
+  if (!employee.dateOfLeaving) throw new ApiError(400, 'Employee has not been offboarded yet');
+
+  const company = await prisma.company.findFirst();
+
+  let doc = await prisma.employeeDocument.findFirst({
+    where: { employeeId, type: 'relieving_letter' }
+  });
+
+  if (!doc || !fs.existsSync(path.join(process.cwd(), doc.filePath))) {
+    // Generate on the fly
+    const pdfBuffer = await generateRelievingLetterPDF(employee, company);
+    const fileName = `${employee.empCode}_relieving.pdf`;
+    const relativePath = `uploads/documents/${fileName}`;
+    const filePath = path.join(process.cwd(), relativePath);
+
+    await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.promises.writeFile(filePath, pdfBuffer);
+
+    doc = await prisma.employeeDocument.upsert({
+      where: { employeeId_type: { employeeId: employee.id, type: 'relieving_letter' } },
+      update: { filePath: relativePath, uploadedAt: new Date() },
+      create: { employeeId: employee.id, type: 'relieving_letter', filePath: relativePath }
+    });
+  }
+
+  res.download(path.join(process.cwd(), doc.filePath));
 });

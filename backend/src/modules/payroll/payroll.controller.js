@@ -175,25 +175,44 @@ export const lockPayroll = asyncHandler(async (req, res) => {
       data: { isLocked: true }
     });
 
+import { generateAllForm16 } from '../payslips/form16.controller.js';
+
+// ... existing code ...
+
     await tx.payrollRun.update({ where: { id: run.id }, data: { status: 'locked', lockedAt: new Date() } });
   });
+
+  // If locking month is March (month === 3), trigger Form 16 generation for all employees
+  if (run.month === 3) {
+    // Fire-and-forget: generate Form 16 for the financial year
+    // March 2026 lock means FY 2025-26 is done. Year for Form 16 is 2026.
+    generateAllForm16ForYear(run.year).catch(console.error);
+  }
 
   await logAudit({ userId: req.user.id, action: 'LOCK_PAYROLL', entity: 'payroll_runs', entityId: req.params.runId });
   res.json(new ApiResponse(200, null, 'Payroll locked successfully'));
 });
 
+// Helper for background generation
+async function generateAllForm16ForYear(year) {
+  const employees = await prisma.employee.findMany({ where: { isActive: true }, select: { id: true } });
+  for (const emp of employees) {
+    try { await generateForm16ForEmployee(emp.id, year); } catch (e) { /* ignore single fails */ }
+  }
+}
+
 // GET /api/payroll/:runId/bank-file — Download NEFT format bank file
 export const getBankFile = asyncHandler(async (req, res) => {
   const run = await prisma.payrollRun.findUnique({
     where: { id: req.params.runId },
-    include: { payslips: { include: { employee: true } } }
+    include: { payslips: { include: { employee: { include: { user: { select: { name: true } } } } } } }
   });
   if (!run || run.status !== 'locked') throw new ApiError(400, 'Only locked payrolls can be exported');
 
   const rows = [['Emp Code', 'Employee Name', 'Bank Name', 'Account No', 'IFSC', 'Amount'].join(',')];
   run.payslips.forEach(p => {
     const e = p.employee;
-    rows.push([e.empCode, `"${p.employee.userId}"`, e.bankName || '', e.bankAccountNo || '', e.ifscCode || '', p.netPay].join(','));
+    rows.push([e.empCode, `"${e.user.name}"`, e.bankName || '', e.bankAccountNo || '', e.ifscCode || '', p.netPay].join(','));
   });
 
   res.setHeader('Content-Type', 'text/csv');

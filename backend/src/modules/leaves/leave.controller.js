@@ -39,12 +39,6 @@ export const listLeaves = asyncHandler(async (req, res) => {
   if (req.user.role === 'employee') {
     const emp = await prisma.employee.findUnique({ where: { userId: req.user.id } });
     if (emp) where.employeeId = emp.id;
-  } else if (req.user.role === 'supervisor') {
-    const sup = await prisma.supervisor.findUnique({ where: { userId: req.user.id } });
-    if (sup) {
-      const teamIds = (await prisma.employee.findMany({ where: { supervisorId: sup.id }, select: { id: true } })).map(e => e.id);
-      where.employeeId = { in: teamIds };
-    }
   }
   if (employeeId) where.employeeId = employeeId;
   if (status) where.status = status;
@@ -106,7 +100,7 @@ export const applyLeave = asyncHandler(async (req, res) => {
   res.status(201).json(new ApiResponse(201, leave, 'Leave applied successfully'));
 });
 
-// PATCH /api/leaves/:id/approve — Supervisor or Admin approves
+// PATCH /api/leaves/:id/approve — Admin approves
 export const approveLeave = asyncHandler(async (req, res) => {
   const leave = await prisma.leaveRequest.findUnique({ where: { id: req.params.id }, include: { employee: true } });
   if (!leave) throw new ApiError(404, 'Leave request not found');

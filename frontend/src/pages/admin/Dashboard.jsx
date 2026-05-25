@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, CheckCircle, UserCog, ClipboardList, TrendingUp, ArrowUpRight, FileText, Plus, BarChart2 } from 'lucide-react';
+import { Users, CheckCircle, MapPin, ClipboardList, TrendingUp, ArrowUpRight, FileText, Plus, BarChart2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { format } from 'date-fns';
@@ -71,17 +71,17 @@ export default function AdminDashboard() {
         </div>
         <div className="col-span-1 bg-gradient-to-br from-violet-600 to-purple-500 rounded-2xl p-5 text-white shadow-card">
           <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center mb-3">
-            <UserCog size={20} className="text-white" />
-          </div>
-          <div className="text-3xl font-black">{stats?.totalSupervisors ?? '—'}</div>
-          <div className="text-white/80 text-sm font-medium mt-0.5">Supervisors</div>
-        </div>
-        <div className="col-span-1 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl p-5 text-white shadow-card">
-          <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center mb-3">
             <ClipboardList size={20} className="text-white" />
           </div>
           <div className="text-3xl font-black">{stats?.pendingLeaves ?? '—'}</div>
           <div className="text-white/80 text-sm font-medium mt-0.5">Pending Leaves</div>
+        </div>
+        <div className="col-span-1 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl p-5 text-white shadow-card">
+          <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center mb-3">
+            <MapPin size={20} className="text-white" />
+          </div>
+          <div className="text-3xl font-black">{stats?.totalSites ?? '—'}</div>
+          <div className="text-white/80 text-sm font-medium mt-0.5">Active Sites</div>
         </div>
       </div>
 

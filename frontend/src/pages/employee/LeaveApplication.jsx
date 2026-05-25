@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { Download, Loader, Calendar, XCircle, CheckCircle, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../api/axios';
 import useAuthStore from '../../store/authStore';
@@ -9,6 +10,7 @@ export default function LeaveApplication() {
   const empId = user?.employee?.id;
   const [balances, setBalances] = useState([]);
   const [leaves, setLeaves] = useState([]);
+  const [downloading, setDownloading] = useState(false);
   const { register, handleSubmit, reset } = useForm();
 
   useEffect(() => {
@@ -49,6 +51,24 @@ export default function LeaveApplication() {
     }
   };
 
+  const downloadReport = async () => {
+    setDownloading(true);
+    try {
+      const res = await api.get(`/leaves/download/${empId}?year=${new Date().getFullYear()}`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Leave_Report_${user.name}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      toast.error('Failed to download report');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   const leaveTypeLabel = {
     CL: 'Casual Leave',
     PL: 'Privilege Leave',
@@ -58,9 +78,19 @@ export default function LeaveApplication() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="page-header">Leave Application</h1>
-        <p className="page-subtitle">Apply for leave and track your requests</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="page-header">Leave Application</h1>
+          <p className="page-subtitle">Apply for leave and track your requests</p>
+        </div>
+        <button
+          onClick={downloadReport}
+          disabled={downloading || !empId}
+          className="btn-secondary py-2 px-4 text-sm"
+        >
+          {downloading ? <Loader size={16} className="animate-spin" /> : <Download size={16} />}
+          Download Report
+        </button>
       </div>
 
       {/* Balance cards */}
