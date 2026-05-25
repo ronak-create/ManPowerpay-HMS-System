@@ -11,6 +11,7 @@ import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 
 // Admin
 import AdminDashboard from './pages/admin/Dashboard';
+import AttendanceEntry from './pages/admin/AttendanceEntry';
 import AdminLayout from './components/layout/AdminLayout';
 import EmployeeList from './pages/admin/EmployeeList';
 import EmployeeForm from './pages/admin/EmployeeForm';
@@ -64,6 +65,7 @@ export default function App() {
 
         <Route path="/admin" element={<PrivateRoute role="admin"><AdminLayout /></PrivateRoute>}>
           <Route index element={<AdminDashboard />} />
+          <Route path="attendance" element={<AttendanceEntry />} />
           <Route path="company" element={<CompanySettings />} />
           <Route path="employees" element={<EmployeeList />} />
           <Route path="employees/new" element={<EmployeeForm />} />

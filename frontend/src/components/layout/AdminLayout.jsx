@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, Settings, FileText,
+  LayoutDashboard, Users, Calendar, Settings, FileText,
   DollarSign, BarChart2, ClipboardList, LogOut, ChevronRight,
   Bell, Menu
 } from 'lucide-react';
@@ -11,7 +11,10 @@ import MobileSidebar from './MobileSidebar';
 const navGroups = [
   {
     label: 'Overview',
-    items: [{ to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true }]
+    items: [
+      { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
+      { to: '/admin/attendance', icon: Calendar, label: 'Attendance' },
+    ]
   },
   {
     label: 'People',

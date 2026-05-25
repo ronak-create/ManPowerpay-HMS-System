@@ -20,7 +20,7 @@ export default function LoginPage() {
       const { token, user } = res.data.data;
       login(user, token);
       toast.success(`Welcome, ${user.name}!`);
-      navigate({ admin: '/admin', supervisor: '/supervisor', employee: '/employee' }[user.role] || '/login');
+      navigate({ admin: '/admin', employee: '/employee' }[user.role] || '/login');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Login failed');
     } finally { setLoading(false); }

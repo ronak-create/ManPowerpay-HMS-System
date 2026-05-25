@@ -5,6 +5,7 @@ import ApiResponse from '../../utils/ApiResponse.js';
 import asyncHandler from '../../utils/asyncHandler.js';
 import { calculatePayroll } from './payroll.engine.js';
 import { logAudit } from '../../utils/auditLog.js';
+import { generateForm16ForEmployee } from '../payslips/form16.controller.js';
 
 // GET /api/payroll — list all payroll runs
 export const listPayrollRuns = asyncHandler(async (req, res) => {
@@ -175,17 +176,12 @@ export const lockPayroll = asyncHandler(async (req, res) => {
       data: { isLocked: true }
     });
 
-import { generateAllForm16 } from '../payslips/form16.controller.js';
-
-// ... existing code ...
-
     await tx.payrollRun.update({ where: { id: run.id }, data: { status: 'locked', lockedAt: new Date() } });
   });
 
   // If locking month is March (month === 3), trigger Form 16 generation for all employees
   if (run.month === 3) {
     // Fire-and-forget: generate Form 16 for the financial year
-    // March 2026 lock means FY 2025-26 is done. Year for Form 16 is 2026.
     generateAllForm16ForYear(run.year).catch(console.error);
   }
 

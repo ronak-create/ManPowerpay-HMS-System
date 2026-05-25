@@ -63,7 +63,7 @@ export const attendanceReport = asyncHandler(async (req, res) => {
     const buffer = await workbook.xlsx.writeBuffer();
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename=Attendance_${month}_${year}.xlsx`);
-    return res.send(buffer);
+    return res.send(Buffer.from(buffer));
   }
 
   // JSON for frontend table
@@ -129,7 +129,7 @@ export const payrollSummaryReport = asyncHandler(async (req, res) => {
     const buffer = await workbook.xlsx.writeBuffer();
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename=Payroll_Summary_${month}_${year}.xlsx`);
-    return res.send(buffer);
+    return res.send(Buffer.from(buffer));
   }
 
   res.json(new ApiResponse(200, run));
@@ -202,7 +202,7 @@ export const headcountReport = asyncHandler(async (req, res) => {
     const buffer = await workbook.xlsx.writeBuffer();
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename=Headcount_Report.xlsx');
-    return res.send(buffer);
+    return res.send(Buffer.from(buffer));
   }
 
   res.json(new ApiResponse(200, { employees, total: employees.length }));
