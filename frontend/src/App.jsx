@@ -43,14 +43,19 @@ const PrivateRoute = ({ children, role }) => {
   return children;
 };
 
+// App.jsx — AppInit
 function AppInit() {
-  const { token, login, logout } = useAuthStore();
+  const { token, login, logout, setAuthReady } = useAuthStore();
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      setAuthReady();       // no token → auth check done, nothing to fetch
+      return;
+    }
     api.get('/auth/me')
       .then(r => login(r.data.data, token))
-      .catch(() => logout());
+      .catch(() => logout())
+      .finally(() => setAuthReady());  // ← always mark done
   }, []);
 
   return null;

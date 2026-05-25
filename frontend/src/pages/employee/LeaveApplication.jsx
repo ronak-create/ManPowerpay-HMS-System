@@ -16,7 +16,7 @@ export default function LeaveApplication() {
 
   const fetchData = async () => {
     const [balRes, histRes] = await Promise.all([
-      api.get(`/leaves/balance/${user.id}`),
+      api.get(`/leaves/balance/${empId}`),
       api.get('/leaves')
     ]);
     setBalances(balRes.data.data);
