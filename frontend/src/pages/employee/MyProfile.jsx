@@ -28,7 +28,7 @@ export default function MyProfile() {
     formState: { errors },
   } = useForm();
 
-  const emp = user?.employee;
+  // const emp = user?.employee;
   const { authReady } = useAuthStore();
 
   if (!authReady) {
