@@ -3,6 +3,10 @@ import { format } from 'date-fns';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const pdfMakeFonts = require('pdfmake/build/vfs_fonts.js');
+const raw = require('pdfmake/build/vfs_fonts');
+console.log('vfs keys:', Object.keys(raw));           // top-level
+console.log('pdfMake?', !!raw?.pdfMake?.vfs);         // true if nested
+console.log('direct font?', !!raw?.['Roboto-Regular.ttf']); // true if flat
 
 const fonts = {
   Roboto: {

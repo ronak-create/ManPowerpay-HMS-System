@@ -18,7 +18,6 @@ router.use(verifyJWT);
 router.get('/meta', getMeta);
 router.get('/bulk-template', requireRole('admin'), downloadBulkTemplate);
 router.post('/bulk-upload', requireRole('admin'), bulkUpload.single('file'), bulkUploadEmployees);
-router.post('/:id/appointment-letter', requireRole('admin'), generateAppointmentLetter);
 router.get('/:id/appointment-letter', verifyJWT, downloadAppointmentLetter);
 router.get('/:id/relieving-letter', verifyJWT, downloadRelievingLetter);
 router.get('/', requireRole('admin'), listEmployees);
