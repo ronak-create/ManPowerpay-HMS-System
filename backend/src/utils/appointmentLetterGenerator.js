@@ -1,22 +1,24 @@
 import PdfPrinter from 'pdfmake';
 import { format } from 'date-fns';
 import { createRequire } from 'module';
+
 const require = createRequire(import.meta.url);
 const vfsFonts = require('pdfmake/build/vfs_fonts');
 
+// Extract VFS mapping safely
+const virtualFileSystem = vfsFonts?.pdfMake?.vfs ?? vfsFonts;
+
 const fonts = {
+  vfs: virtualFileSystem,
   Roboto: {
-    normal: 'Roboto-Regular.ttf',
-    bold: 'Roboto-Medium.ttf',
-    italics: 'Roboto-Italic.ttf',
-    bolditalics: 'Roboto-MediumItalic.ttf',
-  }
+    normal: "Roboto-Regular.ttf",
+    bold: "Roboto-Medium.ttf",
+    italics: "Roboto-Italic.ttf",
+    bolditalics: "Roboto-MediumItalic.ttf",
+  },
 };
 
 const printer = new PdfPrinter(fonts);
-// pdfmake 0.2.x exports { pdfMake: { vfs: {...} } } — must unwrap correctly
-// ✅ Correct
-printer.vfs = vfsFonts?.pdfMake?.vfs ?? vfsFonts;
 const BLUE = '#1F4E79';
 const DARK = '#333333';
 
@@ -25,11 +27,15 @@ function formatINR(amount) {
 }
 
 export async function generateAppointmentLetterPDF(employee, company) {
-  const empName = employee.user?.name || 'Employee';
-  const empCode = employee.empCode;
-  const designation = employee.designation;
-  const doj = employee.dateOfJoining ? format(new Date(employee.dateOfJoining), 'dd MMMM yyyy') : '-';
-  const ctc = formatINR(employee.annualCTC || 0);
+  const empName = employee?.user?.name || 'Employee';
+  const empCode = employee?.empCode || '-';
+  const designation = employee?.designation || '-';
+  const address = employee?.address || '';
+  const companyName = company?.name || 'ManpowerPay HMS';
+  const registeredAddress = company?.registeredAddress || '';
+
+  const doj = employee?.dateOfJoining ? format(new Date(employee.dateOfJoining), 'dd MMMM yyyy') : '-';
+  const ctc = formatINR(employee?.annualCTC || 0);
   const issueDate = format(new Date(), 'dd MMMM yyyy');
 
   const docDefinition = {
@@ -42,8 +48,8 @@ export async function generateAppointmentLetterPDF(employee, company) {
         columns: [
           {
             stack: [
-              { text: company?.name || 'ManpowerPay HMS', style: 'companyName' },
-              { text: company?.registeredAddress || '', style: 'companyAddr' },
+              { text: companyName, style: 'companyName' },
+              { text: registeredAddress, style: 'companyAddr' },
             ]
           }
         ],
@@ -57,7 +63,7 @@ export async function generateAppointmentLetterPDF(employee, company) {
           { text: 'To,', bold: true },
           { text: empName, bold: true },
           { text: `Employee ID: ${empCode}` },
-          { text: employee.address || '', italics: true },
+          ...(address ? [{ text: address, italics: true }] : []),
         ],
         margin: [0, 0, 0, 30]
       },
@@ -83,7 +89,8 @@ export async function generateAppointmentLetterPDF(employee, company) {
               'Your appointment is effective from your date of joining, which is ',
               { text: doj, bold: true },
               '.'
-            ]
+            ],
+            margin: [0, 0, 0, 8] // ✅ Better spacing between list blocks
           },
           {
             text: [
@@ -91,25 +98,29 @@ export async function generateAppointmentLetterPDF(employee, company) {
               'Your Total Cost to Company (CTC) will be ',
               { text: ctc, bold: true },
               ' per annum. The detailed breakup of your salary will be provided to you separately.'
-            ]
+            ],
+            margin: [0, 0, 0, 8]
           },
           {
             text: [
               { text: 'Probation: ', bold: true },
               'You will be on probation for a period of six months from the date of joining. Your services will be confirmed in writing subject to your satisfactory performance during the probation period.'
-            ]
+            ],
+            margin: [0, 0, 0, 8]
           },
           {
             text: [
               { text: 'Notice Period: ', bold: true },
               'During probation, either party can terminate the services by giving 15 days notice. Post confirmation, the notice period will be 30 days.'
-            ]
+            ],
+            margin: [0, 0, 0, 8]
           },
           {
             text: [
               { text: 'Roles and Responsibilities: ', bold: true },
               'Your duties and responsibilities will be as explained to you by your department head. You are expected to perform your duties with diligence and integrity.'
-            ]
+            ],
+            margin: [0, 0, 0, 8]
           }
         ],
         margin: [0, 0, 0, 20]
@@ -121,7 +132,7 @@ export async function generateAppointmentLetterPDF(employee, company) {
         columns: [
           {
             stack: [
-              { text: 'For ' + (company?.name || 'ManpowerPay HMS'), bold: true },
+              { text: 'For ' + companyName, bold: true },
               { text: '\n\n\n\n' },
               { text: 'Authorized Signatory', bold: true }
             ]

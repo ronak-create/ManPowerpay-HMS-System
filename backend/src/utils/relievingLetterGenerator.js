@@ -1,32 +1,36 @@
 import PdfPrinter from 'pdfmake';
 import { format } from 'date-fns';
 import { createRequire } from 'module';
+
 const require = createRequire(import.meta.url);
 const vfsFonts = require('pdfmake/build/vfs_fonts');
 
+// Extract VFS mapping safely
+const virtualFileSystem = vfsFonts?.pdfMake?.vfs ?? vfsFonts;
+
 const fonts = {
+  vfs: virtualFileSystem,
   Roboto: {
-    normal: 'Roboto-Regular.ttf',
-    bold: 'Roboto-Medium.ttf',
-    italics: 'Roboto-Italic.ttf',
-    bolditalics: 'Roboto-MediumItalic.ttf',
-  }
+    normal: "Roboto-Regular.ttf",
+    bold: "Roboto-Medium.ttf",
+    italics: "Roboto-Italic.ttf",
+    bolditalics: "Roboto-MediumItalic.ttf",
+  },
 };
 
 const printer = new PdfPrinter(fonts);
-// pdfmake 0.2.x exports { pdfMake: { vfs: {...} } } — must unwrap correctly
-// ✅ Correct
-printer.vfs = vfsFonts?.pdfMake?.vfs ?? vfsFonts;
 
 const BLUE = '#1F4E79';
 const DARK = '#333333';
 
 export async function generateRelievingLetterPDF(employee, company) {
-  const empName = employee.user?.name || 'Employee';
-  const empCode = employee.empCode;
-  const designation = employee.designation;
-  const doj = employee.dateOfJoining ? format(new Date(employee.dateOfJoining), 'dd MMMM yyyy') : '-';
-  const dol = employee.dateOfLeaving ? format(new Date(employee.dateOfLeaving), 'dd MMMM yyyy') : '-';
+  const empName = employee?.user?.name || 'Employee';
+  const designation = employee?.designation || 'Employee';
+  const companyName = company?.name || 'ManpowerPay HMS';
+  const registeredAddress = company?.registeredAddress || '';
+  
+  const doj = employee?.dateOfJoining ? format(new Date(employee.dateOfJoining), 'dd MMMM yyyy') : '-';
+  const dol = employee?.dateOfLeaving ? format(new Date(employee.dateOfLeaving), 'dd MMMM yyyy') : '-';
   const issueDate = format(new Date(), 'dd MMMM yyyy');
 
   const docDefinition = {
@@ -39,8 +43,8 @@ export async function generateRelievingLetterPDF(employee, company) {
         columns: [
           {
             stack: [
-              { text: company?.name || 'ManpowerPay HMS', style: 'companyName' },
-              { text: company?.registeredAddress || '', style: 'companyAddr' },
+              { text: companyName, style: 'companyName' },
+              { text: registeredAddress, style: 'companyAddr' },
             ]
           }
         ],
@@ -56,7 +60,7 @@ export async function generateRelievingLetterPDF(employee, company) {
       {
         text: [
           'This is to formally confirm that your resignation from the services of ',
-          { text: company?.name, bold: true },
+          { text: companyName, bold: true },
           ' has been accepted and you are being relieved from your duties as ',
           { text: designation, bold: true },
           ' effective from the close of business hours on ',
@@ -86,7 +90,7 @@ export async function generateRelievingLetterPDF(employee, company) {
         columns: [
           {
             stack: [
-              { text: 'For ' + (company?.name || 'ManpowerPay HMS'), bold: true },
+              { text: 'For ' + companyName, bold: true },
               { text: '\n\n\n\n' },
               { text: 'Authorized Signatory', bold: true }
             ]
