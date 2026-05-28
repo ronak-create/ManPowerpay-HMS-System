@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Calendar, Settings, FileText,
   DollarSign, BarChart2, ClipboardList, LogOut, ChevronRight,
-  Bell, Menu
+  Bell, Menu, Briefcase
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import MobileSidebar from './MobileSidebar';
@@ -27,6 +27,7 @@ const navGroups = [
     items: [
       { to: '/admin/salary-templates', icon: DollarSign, label: 'Salary Templates' },
       { to: '/admin/payroll', icon: FileText, label: 'Payroll Run' },
+      { to: '/admin/leaves', icon: Briefcase, label: 'Leave Management' },
     ]
   },
   {

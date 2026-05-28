@@ -17,6 +17,7 @@ import EmployeeList from './pages/admin/EmployeeList';
 import EmployeeForm from './pages/admin/EmployeeForm';
 import SalaryTemplates from './pages/admin/SalaryTemplates';
 import PayrollRun from './pages/admin/PayrollRun';
+import LeaveManagement from './pages/admin/LeaveManagement';
 import Reports from './pages/admin/Reports';
 import AuditLogs from './pages/admin/AuditLogs';
 import CompanySettings from './pages/admin/CompanySettings';
