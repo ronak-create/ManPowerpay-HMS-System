@@ -40,10 +40,7 @@ export default function MyPayslips() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="page-header">My Payslips</h1>
-          <p className="page-subtitle">Download and view your salary statements</p>
-        </div>
+
         <select value={year} onChange={e => setYear(Number(e.target.value))}
           className="input-base w-32">
           {years.map(y => <option key={y} value={y}>{y}</option>)}

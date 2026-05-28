@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { User, Lock, Building, CreditCard, Save, Eye, EyeOff, Loader, FileText, Download, Calendar } from 'lucide-react';
+import { User, Lock, Building, CreditCard, Save, Eye, EyeOff, Loader, FileText, Download, Calendar, IndianRupee } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import api from '../../api/axios';
@@ -36,10 +36,6 @@ export default function MyProfile() {
   if (!emp) {
     return (
       <div className="space-y-6 max-w-3xl">
-        <div>
-          <h1 className="page-header">My Profile</h1>
-          <p className="page-subtitle">Your account information and settings</p>
-        </div>
         <div className="card flex flex-col items-center justify-center py-16 text-center gap-3">
           <User size={40} className="text-gray-200" />
           <p className="text-gray-500 font-medium">Employee record not found</p>

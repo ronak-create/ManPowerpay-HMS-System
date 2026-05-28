@@ -79,10 +79,6 @@ export default function LeaveApplication() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="page-header">Leave Application</h1>
-          <p className="page-subtitle">Apply for leave and track your requests</p>
-        </div>
         <button
           onClick={downloadReport}
           disabled={downloading || !empId}
