@@ -8,7 +8,7 @@ import ApiResponse from '../../utils/ApiResponse.js';
 import asyncHandler from '../../utils/asyncHandler.js';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
-const pdfMakeFonts = require('pdfmake/build/vfs_fonts.js');
+const vfsFonts = require('pdfmake/build/vfs_fonts.js');
 
 const fonts = {
   Roboto: {
@@ -20,7 +20,7 @@ const fonts = {
 };
 
 const printer = new PdfPrinter(fonts);
-printer.vfs = pdfMakeFonts;
+printer.vfs = vfsFonts?.pdfMake?.vfs ?? vfsFonts;
 
 const BLUE = '#1F4E79';
 const DARK = '#333333';
