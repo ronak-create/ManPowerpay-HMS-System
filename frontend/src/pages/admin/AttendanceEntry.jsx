@@ -129,10 +129,6 @@ export default function AttendanceEntry() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="page-header">Attendance Entry</h1>
-          <p className="page-subtitle">Mark daily attendance for the team</p>
-        </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button onClick={() => setShowBulk(true)} className="btn-secondary">Bulk Upload</button>
           <div className="relative flex-1 sm:flex-none">

@@ -45,12 +45,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Welcome */}
-      <div>
-        <h1 className="page-header">Dashboard</h1>
-        <p className="page-subtitle">Welcome back! Here's what's happening today.</p>
-      </div>
-
       {/* Stat cards */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <div className="col-span-1 bg-gradient-to-br from-primary-800 to-primary-light rounded-2xl p-5 text-white shadow-card">

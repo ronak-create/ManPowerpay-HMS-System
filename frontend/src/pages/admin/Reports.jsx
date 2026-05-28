@@ -74,10 +74,6 @@ export default function AdminReports() {
 
   return (
     <div className="space-y-6 max-w-5xl">
-      <div>
-        <h1 className="page-header">Reports & MIS</h1>
-        <p className="page-subtitle">Export statutory filings and management information statements</p>
-      </div>
 
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 overflow-x-auto scrollbar-none">
         {tabs.map(t => (

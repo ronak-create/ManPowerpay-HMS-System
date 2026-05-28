@@ -96,10 +96,6 @@ export default function PayrollRun() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="page-header">Payroll Management</h1>
-          <p className="page-subtitle">Process monthly salaries, approve disbursements and lock records</p>
-        </div>
         {step === 2 && (
           <button onClick={() => setStep(1)} className="btn-secondary">
             Back to List

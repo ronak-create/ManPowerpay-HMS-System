@@ -224,23 +224,88 @@ export const advanceLedger = asyncHandler(async (req, res) => {
 
 // ── AUDIT LOG REPORT ──────────────────────────────────────────────────────────
 export const auditReport = asyncHandler(async (req, res) => {
-  const { userId, action, entity, from, to, page = 1, limit = 100 } = req.query;
+  const {
+    userId,
+    action,
+    entity,
+    from,
+    to,
+    page = 1,
+    limit = 50,
+  } = req.query;
+
+  const pageNumber = Number(page);
+  const limitNumber = Number(limit);
+
   const where = {};
-  if (userId) where.userId = userId;
-  if (action) where.action = { contains: action, mode: 'insensitive' };
-  if (entity) where.entity = entity;
-  if (from && to) where.createdAt = { gte: new Date(from), lte: new Date(to) };
+
+  // Filters
+  if (userId) {
+    where.userId = userId;
+  }
+
+  if (action) {
+    where.action = {
+      contains: action,
+      mode: 'insensitive',
+    };
+  }
+
+  if (entity) {
+    where.entity = entity;
+  }
+
+  // Date filtering
+  if (from || to) {
+    where.createdAt = {};
+
+    if (from) {
+      where.createdAt.gte = new Date(from);
+    }
+
+    if (to) {
+      // include full selected day
+      where.createdAt.lte = new Date(
+        `${to}T23:59:59.999Z`
+      );
+    }
+  }
 
   const [logs, total] = await Promise.all([
     prisma.auditLog.findMany({
-      where, skip: (page - 1) * limit, take: Number(limit),
-      include: { user: { select: { name: true, email: true, role: true } } },
-      orderBy: { createdAt: 'desc' }
+      where,
+      skip: (pageNumber - 1) * limitNumber,
+      take: limitNumber,
+
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
+      },
+
+      orderBy: {
+        createdAt: 'desc',
+      },
     }),
-    prisma.auditLog.count({ where })
+
+    prisma.auditLog.count({
+      where,
+    }),
   ]);
 
-  res.json(new ApiResponse(200, { logs, total }));
+  return res.json(
+    new ApiResponse(200, {
+      logs,
+      total,
+      page: pageNumber,
+      limit: limitNumber,
+      totalPages: Math.ceil(total / limitNumber),
+    })
+  );
 });
 
 // ── ADMIN DASHBOARD STATS ─────────────────────────────────────────────────────
