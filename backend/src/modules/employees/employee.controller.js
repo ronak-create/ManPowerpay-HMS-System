@@ -440,7 +440,6 @@ export const downloadAppointmentLetter = asyncHandler(async (req, res) => {
 
   const company = await prisma.company.findFirst();
   if (!company) throw new ApiError(404, "Company not configured");
-  const pdfErr = new Error("PDF generation failed");
 
   try {
     const pdfBuffer = await generateAppointmentLetterPDF(employee, company);
@@ -468,8 +467,8 @@ export const downloadAppointmentLetter = asyncHandler(async (req, res) => {
     );
     res.send(pdfBuffer);
   } catch (err) {
-    console.error("PDF generation error:", pdfErr.message, pdfErr.stack);
-    throw pdfErr; // still propagate as 500
+    console.error("PDF generation error:", err.message, err.stack); // real error
+    throw new ApiError(500, "PDF generation failed");
   }
 });
 

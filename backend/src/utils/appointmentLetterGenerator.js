@@ -2,11 +2,7 @@ import PdfPrinter from 'pdfmake';
 import { format } from 'date-fns';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
-const pdfMakeFonts = require('pdfmake/build/vfs_fonts.js');
-const raw = require('pdfmake/build/vfs_fonts');
-console.log('vfs keys:', Object.keys(raw));           // top-level
-console.log('pdfMake?', !!raw?.pdfMake?.vfs);         // true if nested
-console.log('direct font?', !!raw?.['Roboto-Regular.ttf']); // true if flat
+const vfsFonts = require('pdfmake/build/vfs_fonts');
 
 const fonts = {
   Roboto: {
@@ -18,8 +14,9 @@ const fonts = {
 };
 
 const printer = new PdfPrinter(fonts);
-printer.vfs = pdfMakeFonts;
-
+// pdfmake 0.2.x exports { pdfMake: { vfs: {...} } } — must unwrap correctly
+// ✅ Correct
+printer.vfs = vfsFonts?.pdfMake?.vfs ?? vfsFonts;
 const BLUE = '#1F4E79';
 const DARK = '#333333';
 
@@ -32,7 +29,7 @@ export async function generateAppointmentLetterPDF(employee, company) {
   const empCode = employee.empCode;
   const designation = employee.designation;
   const doj = employee.dateOfJoining ? format(new Date(employee.dateOfJoining), 'dd MMMM yyyy') : '-';
-  const ctc = formatINR(employee.annualCTC);
+  const ctc = formatINR(employee.annualCTC || 0);
   const issueDate = format(new Date(), 'dd MMMM yyyy');
 
   const docDefinition = {
@@ -45,8 +42,8 @@ export async function generateAppointmentLetterPDF(employee, company) {
         columns: [
           {
             stack: [
-              { text: company.name || 'ManpowerPay HMS', style: 'companyName' },
-              { text: company.registeredAddress || '', style: 'companyAddr' },
+              { text: company?.name || 'ManpowerPay HMS', style: 'companyName' },
+              { text: company?.registeredAddress || '', style: 'companyAddr' },
             ]
           }
         ],
@@ -83,7 +80,7 @@ export async function generateAppointmentLetterPDF(employee, company) {
           {
             text: [
               { text: 'Date of Joining: ', bold: true },
-              `Your appointment is effective from your date of joining, which is `,
+              'Your appointment is effective from your date of joining, which is ',
               { text: doj, bold: true },
               '.'
             ]
@@ -91,7 +88,7 @@ export async function generateAppointmentLetterPDF(employee, company) {
           {
             text: [
               { text: 'Remuneration: ', bold: true },
-              `Your Total Cost to Company (CTC) will be `,
+              'Your Total Cost to Company (CTC) will be ',
               { text: ctc, bold: true },
               ' per annum. The detailed breakup of your salary will be provided to you separately.'
             ]
@@ -124,7 +121,7 @@ export async function generateAppointmentLetterPDF(employee, company) {
         columns: [
           {
             stack: [
-              { text: 'For ' + (company.name || 'ManpowerPay HMS'), bold: true },
+              { text: 'For ' + (company?.name || 'ManpowerPay HMS'), bold: true },
               { text: '\n\n\n\n' },
               { text: 'Authorized Signatory', bold: true }
             ]
@@ -151,11 +148,15 @@ export async function generateAppointmentLetterPDF(employee, company) {
   };
 
   return new Promise((resolve, reject) => {
-    const pdfDoc = printer.createPdfKitDocument(docDefinition);
-    const chunks = [];
-    pdfDoc.on('data', (chunk) => chunks.push(chunk));
-    pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
-    pdfDoc.on('error', reject);
-    pdfDoc.end();
+    try {
+      const pdfDoc = printer.createPdfKitDocument(docDefinition);
+      const chunks = [];
+      pdfDoc.on('data', (chunk) => chunks.push(chunk));
+      pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
+      pdfDoc.on('error', reject);
+      pdfDoc.end();
+    } catch (err) {
+      reject(err);
+    }
   });
 }

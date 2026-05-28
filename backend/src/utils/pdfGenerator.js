@@ -2,11 +2,9 @@ import PdfPrinter from 'pdfmake';
 import { format } from 'date-fns';
 import path from 'path';
 
-// pdfmake ships its own VFS with built-in fonts
-// We use the built-in Roboto via vfs_fonts
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
-const pdfMakeFonts = require('pdfmake/build/vfs_fonts.js');
+const vfsFonts = require('pdfmake/build/vfs_fonts');
 
 const fonts = {
   Roboto: {
@@ -18,7 +16,9 @@ const fonts = {
 };
 
 const printer = new PdfPrinter(fonts);
-printer.vfs = pdfMakeFonts;
+// pdfmake 0.2.x exports { pdfMake: { vfs: {...} } } — must unwrap correctly
+// ✅ Correct
+printer.vfs = vfsFonts?.pdfMake?.vfs ?? vfsFonts;
 
 const BLUE = '#1F4E79';
 const LIGHT_BLUE = '#BDD7EE';
@@ -56,7 +56,6 @@ export async function generatePayslipPDF(payslip, employee, company) {
   const totalEarnings = earnings.reduce((s, e) => s + e.amount, 0);
   const totalDeductions = deductions.reduce((s, d) => s + d.amount, 0);
 
-  // Build earnings table rows
   const earningRows = earnings.map(e => [
     { text: e.name, style: 'tableCell' },
     { text: formatINR(e.amount), style: 'tableCellRight' }
@@ -79,9 +78,9 @@ export async function generatePayslipPDF(payslip, employee, company) {
         columns: [
           {
             stack: [
-              { text: company.name || 'ManpowerPay HMS', style: 'companyName' },
-              { text: company.registeredAddress || '', style: 'companyAddr' },
-              ...(company.gstin ? [{ text: `GSTIN: ${company.gstin}`, style: 'companyAddr' }] : []),
+              { text: company?.name || 'ManpowerPay HMS', style: 'companyName' },
+              { text: company?.registeredAddress || '', style: 'companyAddr' },
+              ...(company?.gstin ? [{ text: `GSTIN: ${company.gstin}`, style: 'companyAddr' }] : []),
             ]
           },
           {
@@ -264,11 +263,15 @@ export async function generatePayslipPDF(payslip, employee, company) {
   };
 
   return new Promise((resolve, reject) => {
-    const pdfDoc = printer.createPdfKitDocument(docDefinition);
-    const chunks = [];
-    pdfDoc.on('data', (chunk) => chunks.push(chunk));
-    pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
-    pdfDoc.on('error', reject);
-    pdfDoc.end();
+    try {
+      const pdfDoc = printer.createPdfKitDocument(docDefinition);
+      const chunks = [];
+      pdfDoc.on('data', (chunk) => chunks.push(chunk));
+      pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
+      pdfDoc.on('error', reject);
+      pdfDoc.end();
+    } catch (err) {
+      reject(err);
+    }
   });
 }

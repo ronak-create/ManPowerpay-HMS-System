@@ -2,7 +2,7 @@ import PdfPrinter from 'pdfmake';
 import { format } from 'date-fns';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
-const pdfMakeFonts = require('pdfmake/build/vfs_fonts.js');
+const vfsFonts = require('pdfmake/build/vfs_fonts');
 
 const fonts = {
   Roboto: {
@@ -14,7 +14,9 @@ const fonts = {
 };
 
 const printer = new PdfPrinter(fonts);
-printer.vfs = pdfMakeFonts;
+// pdfmake 0.2.x exports { pdfMake: { vfs: {...} } } — must unwrap correctly
+// ✅ Correct
+printer.vfs = vfsFonts?.pdfMake?.vfs ?? vfsFonts;
 
 const BLUE = '#1F4E79';
 const DARK = '#333333';
@@ -37,8 +39,8 @@ export async function generateRelievingLetterPDF(employee, company) {
         columns: [
           {
             stack: [
-              { text: company.name || 'ManpowerPay HMS', style: 'companyName' },
-              { text: company.registeredAddress || '', style: 'companyAddr' },
+              { text: company?.name || 'ManpowerPay HMS', style: 'companyName' },
+              { text: company?.registeredAddress || '', style: 'companyAddr' },
             ]
           }
         ],
@@ -54,7 +56,7 @@ export async function generateRelievingLetterPDF(employee, company) {
       {
         text: [
           'This is to formally confirm that your resignation from the services of ',
-          { text: company.name, bold: true },
+          { text: company?.name, bold: true },
           ' has been accepted and you are being relieved from your duties as ',
           { text: designation, bold: true },
           ' effective from the close of business hours on ',
@@ -68,8 +70,7 @@ export async function generateRelievingLetterPDF(employee, company) {
         text: [
           'We further confirm that you joined the organization on ',
           { text: doj, bold: true },
-          '. Your association with us has been ',
-          'satisfactory and we appreciate the contributions you made during your tenure.'
+          '. Your association with us has been satisfactory and we appreciate the contributions you made during your tenure.'
         ],
         margin: [0, 0, 0, 15]
       },
@@ -85,7 +86,7 @@ export async function generateRelievingLetterPDF(employee, company) {
         columns: [
           {
             stack: [
-              { text: 'For ' + (company.name || 'ManpowerPay HMS'), bold: true },
+              { text: 'For ' + (company?.name || 'ManpowerPay HMS'), bold: true },
               { text: '\n\n\n\n' },
               { text: 'Authorized Signatory', bold: true }
             ]
@@ -102,11 +103,15 @@ export async function generateRelievingLetterPDF(employee, company) {
   };
 
   return new Promise((resolve, reject) => {
-    const pdfDoc = printer.createPdfKitDocument(docDefinition);
-    const chunks = [];
-    pdfDoc.on('data', (chunk) => chunks.push(chunk));
-    pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
-    pdfDoc.on('error', reject);
-    pdfDoc.end();
+    try {
+      const pdfDoc = printer.createPdfKitDocument(docDefinition);
+      const chunks = [];
+      pdfDoc.on('data', (chunk) => chunks.push(chunk));
+      pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
+      pdfDoc.on('error', reject);
+      pdfDoc.end();
+    } catch (err) {
+      reject(err);
+    }
   });
 }
