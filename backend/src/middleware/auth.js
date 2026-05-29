@@ -20,8 +20,19 @@ export const verifyJWT = async (req, res, next) => {
     if (!token) throw new ApiError(401, 'Unauthorised — empty token');
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+    const user = await prisma.user.findUnique({ 
+      where: { id: decoded.id },
+      include: { employee: { select: { dateOfLeaving: true } } }
+    });
+
     if (!user || !user.isActive) throw new ApiError(401, 'User not found or deactivated');
+
+    // Auto-deactivate if Last Working Day has passed
+    if (user.employee?.dateOfLeaving && new Date(user.employee.dateOfLeaving) < new Date()) {
+      await prisma.user.update({ where: { id: user.id }, data: { isActive: false } });
+      throw new ApiError(401, 'Your association with the company has ended. Access revoked.');
+    }
+
     req.user = user;
     next();
   } catch (error) {

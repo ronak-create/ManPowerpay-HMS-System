@@ -94,7 +94,7 @@ export default function LeaveApplication() {
         {balances.map((b) => (
           <div key={b.leaveType} className="bg-white p-4 rounded-xl shadow-sm border">
             <div className="text-xs text-gray-500 font-medium">{leaveTypeLabel[b.leaveType] || b.leaveType}</div>
-            <div className="text-3xl font-black text-primary mt-1">{b.balance}</div>
+            <div className="text-3xl font-black text-amber-700 mt-1">{b.balance}</div>
             <div className="text-xs text-gray-400 mt-0.5">{b.used} used of {b.total}</div>
           </div>
         ))}

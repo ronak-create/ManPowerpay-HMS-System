@@ -49,7 +49,7 @@ export default function MyPayslips() {
 
       {loading ? (
         <div className="flex justify-center py-16">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : payslips.length === 0 ? (
         <div className="card flex flex-col items-center py-16 text-center">
@@ -63,7 +63,8 @@ export default function MyPayslips() {
             <div key={p.id} className="card overflow-hidden">
               {/* Header row */}
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-primary flex items-center justify-center text-white font-black text-sm flex-shrink-0">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-black text-sm flex-shrink-0"
+                     style={{ background: 'linear-gradient(135deg, #B45309, #D97706)' }}>
                   {MONTH_NAMES[p.month - 1].slice(0, 3).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -132,7 +133,8 @@ export default function MyPayslips() {
                       </div>
                     </div>
                   </div>
-                  <div className="sm:col-span-2 bg-gradient-primary rounded-xl p-4 text-white flex justify-between items-center">
+                  <div className="sm:col-span-2 rounded-xl p-4 text-white flex justify-between items-center"
+                       style={{ background: 'linear-gradient(135deg, #B45309, #D97706)' }}>
                     <span className="font-semibold">Take-Home Pay</span>
                     <span className="text-2xl font-black">{formatINR(p.netPay)}</span>
                   </div>

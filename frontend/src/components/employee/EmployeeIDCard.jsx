@@ -43,7 +43,7 @@ export default function EmployeeIDCard({
 
         <button
           onClick={handlePrint}
-          className="text-xs text-primary font-semibold flex items-center gap-1 hover:underline"
+          className="text-xs text-amber-700 font-semibold flex items-center gap-1 hover:underline"
         >
           <Printer size={13} />
           Print / Save
@@ -57,7 +57,7 @@ export default function EmployeeIDCard({
           className="relative w-full max-w-[380px] rounded-[28px] overflow-hidden shadow-2xl text-white"
         >
           {/* Background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-primary-900 via-primary to-primary-light" />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, #B45309, #D97706)' }} />
           <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10" />
           <div className="absolute -bottom-12 -left-10 w-36 h-36 rounded-full bg-white/5" />
 
@@ -74,7 +74,7 @@ export default function EmployeeIDCard({
                 </p>
               </div>
 
-              <div className="bg-white rounded-xl px-2 py-1 text-primary text-xs font-black shadow">
+              <div className="bg-white rounded-xl px-2 py-1 text-amber-700 text-xs font-black shadow">
                 {employee?.empCode || "EMP"}
               </div>
             </div>

@@ -132,7 +132,7 @@ function BulkUploadModal({ open, onClose, onSuccess }) {
             </div>
 
             <div className="flex items-center justify-between pt-4 border-t">
-              <button onClick={downloadTemplate} className="flex items-center gap-2 text-primary font-semibold hover:underline text-sm"><Download size={16} /> Download Template</button>
+              <button onClick={downloadTemplate} className="flex items-center gap-2 text-amber-700 font-semibold hover:underline text-sm"><Download size={16} /> Download Template</button>
               <div className="flex gap-3">
                 <button onClick={onClose} className="btn-ghost text-sm">Cancel</button>
                 <button onClick={handleUpload} disabled={loading || !file} className="btn-primary">{loading ? "Validating..." : "Upload & Review"}</button>
@@ -359,7 +359,7 @@ export default function EmployeeList() {
           </button>
           <button
             onClick={() => navigate("/admin/employees/new")}
-            className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-light transition"
+            className="flex items-center gap-2 bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-600-light transition"
           >
             <Plus size={18} /> Add Employee
           </button>

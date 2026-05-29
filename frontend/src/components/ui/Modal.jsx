@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
+import clsx from 'clsx';
 
 const sizes = { sm: 'max-w-md', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl', full: 'max-w-6xl' };
 
@@ -14,29 +15,46 @@ export default function Modal({ open, onClose, title, subtitle, children, size =
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-6">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="absolute inset-0 animate-fade-in"
+        style={{ background: 'rgba(9,9,11,.5)', backdropFilter: 'blur(4px)' }}
+        onClick={onClose}
+      />
 
       {/* Dialog */}
-      <div className={`relative bg-white rounded-2xl shadow-2xl w-full ${sizes[size]} max-h-[90vh] flex flex-col animate-slide-up`}>
+      <div className={clsx(
+        'relative bg-white rounded-2xl w-full flex flex-col animate-slide-up',
+        sizes[size],
+        'max-h-[90vh]'
+      )}
+           style={{ boxShadow: '0 24px 80px -12px rgba(0,0,0,.3), 0 0 0 1px rgba(0,0,0,.05)' }}>
+        {/* Amber top accent line */}
+        <div className="h-px rounded-t-2xl w-full"
+             style={{ background: 'linear-gradient(90deg, #D97706, #F59E0B, #FBBF24)' }} />
+
         {/* Header */}
-        <div className="flex items-start justify-between p-6 border-b border-gray-100 flex-shrink-0">
+        <div className="flex items-start justify-between px-6 py-5 border-b border-zinc-100 flex-shrink-0">
           <div>
-            <h3 className="font-bold text-gray-900 text-lg">{title}</h3>
-            {subtitle && <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>}
+            <h3 className="font-semibold text-zinc-900">{title}</h3>
+            {subtitle && <p className="text-xs text-zinc-400 mt-0.5">{subtitle}</p>}
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-xl hover:bg-gray-100 flex items-center justify-center transition-colors ml-4 flex-shrink-0"
+            className="w-8 h-8 rounded-xl hover:bg-zinc-100 flex items-center justify-center transition-colors ml-4 flex-shrink-0 text-zinc-400 hover:text-zinc-600"
           >
-            <X size={18} className="text-gray-500" />
+            <X size={16} />
           </button>
         </div>
 
         {/* Body */}
-        <div className="overflow-y-auto flex-1 p-6">{children}</div>
+        <div className="overflow-y-auto flex-1 px-6 py-5">{children}</div>
 
-        {/* Footer (optional) */}
-        {footer && <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl flex-shrink-0">{footer}</div>}
+        {/* Footer */}
+        {footer && (
+          <div className="px-6 py-4 border-t border-zinc-100 bg-zinc-50/50 rounded-b-2xl flex-shrink-0">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -20,7 +20,7 @@ export default function MobileSidebar({ open, onClose, children }) {
       {/* Drawer */}
       <div
         className={`
-          fixed inset-y-0 left-0 z-50 w-64 bg-sidebar flex flex-col shadow-sidebar
+          fixed inset-y-0 left-0 z-50 w-60 bg-sidebar flex flex-col shadow-sidebar
           transform transition-transform duration-300 ease-in-out lg:hidden
           ${open ? 'translate-x-0' : '-translate-x-full'}
         `}

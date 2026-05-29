@@ -141,7 +141,7 @@ function CompanyProfileTab({ company, onSaved }) {
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={uploadingLogo}
-            className="mt-2 flex items-center gap-2 text-xs font-semibold text-primary border border-primary/30 bg-primary/5 px-3 py-1.5 rounded-lg hover:bg-primary/10 transition disabled:opacity-50"
+            className="mt-2 flex items-center gap-2 text-xs font-semibold text-amber-700 border border-primary/30 bg-amber-600/5 px-3 py-1.5 rounded-lg hover:bg-amber-600/10 transition disabled:opacity-50"
           >
             <Upload size={13} />
             {uploadingLogo ? "Uploading..." : "Upload Logo"}
@@ -336,7 +336,7 @@ function PayrollConfigTab({ company, onSaved }) {
               key={opt.value}
               className={`cursor-pointer rounded-xl border-2 p-4 transition-all ${
                 Number(workingDaysBase) === opt.value
-                  ? "border-primary bg-primary/5"
+                  ? "border-primary bg-amber-600/5"
                   : "border-gray-200 hover:border-gray-300"
               }`}
             >
@@ -355,7 +355,7 @@ function PayrollConfigTab({ company, onSaved }) {
                   }`}
                 >
                   {Number(workingDaysBase) === opt.value && (
-                    <div className="w-2 h-2 rounded-full bg-primary" />
+                    <div className="w-2 h-2 rounded-full bg-amber-600" />
                   )}
                 </div>
                 <div>
@@ -406,7 +406,7 @@ function PayrollConfigTab({ company, onSaved }) {
                 }}
                 className={`px-3 py-2 rounded-lg border text-sm font-semibold transition ${
                   Number(otMultiplier) === v
-                    ? "bg-primary text-white border-primary"
+                    ? "bg-amber-600 text-white border-primary"
                     : "border-gray-200 text-gray-600 hover:border-primary/40"
                 }`}
               >
@@ -498,7 +498,7 @@ function PayrollConfigTab({ company, onSaved }) {
             },
           ].map((item) => (
             <div key={item.label} className="bg-white rounded-xl p-3">
-              <p className="text-lg font-black text-primary">{item.value}</p>
+              <p className="text-lg font-black text-amber-700">{item.value}</p>
               <p className="text-xs text-gray-500 mt-0.5">{item.label}</p>
             </div>
           ))}
@@ -656,7 +656,7 @@ function HolidaysTab({ company, onSaved }) {
                 <button
                   key={h.name}
                   onClick={() => setForm({ name: h.name, date: h.date })}
-                  className="text-xs px-3 py-1.5 rounded-lg border border-dashed border-gray-300 text-gray-600 hover:border-primary hover:text-primary transition"
+                  className="text-xs px-3 py-1.5 rounded-lg border border-dashed border-gray-300 text-gray-600 hover:border-primary hover:text-amber-700 transition"
                 >
                   + {h.name}
                 </button>
@@ -867,7 +867,7 @@ function PTSlabsTab({ company }) {
         </div>
         <button
           onClick={loadDefault}
-          className="text-xs font-semibold text-primary border border-primary/30 bg-primary/5 px-3 py-2 rounded-lg hover:bg-primary/10 transition flex-shrink-0"
+          className="text-xs font-semibold text-amber-700 border border-primary/30 bg-amber-600/5 px-3 py-2 rounded-lg hover:bg-amber-600/10 transition flex-shrink-0"
         >
           Load {company.ptState} Defaults
         </button>
@@ -967,7 +967,7 @@ function PTSlabsTab({ company }) {
         <div className="p-4 border-t border-gray-100 flex items-center justify-between">
           <button
             onClick={addRow}
-            className="text-sm text-primary font-semibold flex items-center gap-1.5 hover:underline"
+            className="text-sm text-amber-700 font-semibold flex items-center gap-1.5 hover:underline"
           >
             <Plus size={15} /> Add Slab
           </button>
@@ -1299,7 +1299,7 @@ export default function CompanySettings() {
               transition-all whitespace-nowrap flex-shrink-0
               ${
                 activeTab === tab.id
-                  ? "bg-white text-primary shadow-sm"
+                  ? "bg-white text-amber-700 shadow-sm"
                   : "text-gray-500 hover:text-gray-700"
               }
             `}

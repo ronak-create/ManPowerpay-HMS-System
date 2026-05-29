@@ -53,7 +53,7 @@ export default function AdminReports() {
   const ReportCard = ({ title, description, icon: Icon, onClick, actionLabel = "Download Excel" }) => (
     <div className="flex items-center justify-between p-6 bg-white border border-gray-100 rounded-2xl hover:shadow-md transition group">
       <div className="flex items-center gap-5">
-        <div className="w-14 h-14 rounded-2xl bg-primary/5 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors duration-300">
+        <div className="w-14 h-14 rounded-2xl bg-primary/5 text-amber-700 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors duration-300">
           <Icon size={24} />
         </div>
         <div>
@@ -64,7 +64,7 @@ export default function AdminReports() {
       <button
         onClick={onClick}
         disabled={loading}
-        className="flex items-center gap-2 text-primary font-bold hover:underline disabled:opacity-50"
+        className="flex items-center gap-2 text-amber-700 font-bold hover:underline disabled:opacity-50"
       >
         {loading ? <Loader size={18} className="animate-spin" /> : <Download size={18} />}
         <span className="hidden sm:inline">{actionLabel}</span>
@@ -79,7 +79,7 @@ export default function AdminReports() {
         {tabs.map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0
-              ${activeTab === t.id ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+              ${activeTab === t.id ? 'bg-white text-amber-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
             <t.icon size={14} />
             {t.label}
           </button>

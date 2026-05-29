@@ -41,10 +41,10 @@ function BulkUploadModal({ open, onClose, onSuccess }) {
         <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-xl py-8">
           <Upload className="text-gray-300 mb-2" size={32} />
           <input type="file" accept=".xlsx" onChange={(e) => setFile(e.target.files[0])} className="hidden" id="at-file" />
-          <label htmlFor="at-file" className="text-sm font-semibold text-primary cursor-pointer hover:underline">{file ? file.name : 'Select Excel file'}</label>
+          <label htmlFor="at-file" className="text-sm font-semibold text-amber-700 cursor-pointer hover:underline">{file ? file.name : 'Select Excel file'}</label>
         </div>
         <div className="flex justify-between items-center">
-          <button onClick={downloadTemplate} className="text-xs text-gray-500 hover:text-primary flex items-center gap-1">Download Template</button>
+          <button onClick={downloadTemplate} className="text-xs text-gray-500 hover:text-amber-700 flex items-center gap-1">Download Template</button>
           <button onClick={handleUpload} disabled={loading || !file} className="btn-primary">{loading ? 'Uploading...' : 'Upload'}</button>
         </div>
       </div>

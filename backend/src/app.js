@@ -3,7 +3,10 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import morgan from 'morgan';
+import compression from 'compression';
 import { errorHandler } from './middleware/errorHandler.js';
+import { trimMiddleware } from './middleware/trim.js';
 
 // Route imports
 import authRoutes from './modules/auth/auth.routes.js';
@@ -18,6 +21,7 @@ import reportRoutes from './modules/reports/report.routes.js';
 import form16Routes from './modules/payslips/form16.routes.js';
 import salaryTemplateRoutes from './modules/payroll/salaryTemplate.routes.js';
 import notificationRoutes from './modules/notifications/notification.routes.js';
+import resignationRoutes from './modules/resignations/resignation.routes.js';
 
 dotenv.config();
 
@@ -25,17 +29,27 @@ const app = express();
 
 app.set('trust proxy', 1);
 
-app.use(helmet());
-// Replace the cors line:
+// Production Middleware
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+app.use(compression());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+
+// CORS Configuration
 app.use(cors({
   origin: process.env.CLIENT_URL?.split(',') || 'http://localhost:5173',
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization', 'authorization'],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use('/uploads', express.static('uploads'));
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(trimMiddleware);
+
+// Serve logos publicly, but nothing else (security hardening)
+app.use('/uploads/logos', express.static('uploads/logos'));
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -60,6 +74,7 @@ app.use('/api/statutory', statutoryRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/salary-templates', salaryTemplateRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/resignations', resignationRoutes);
 
 app.use(errorHandler);
 

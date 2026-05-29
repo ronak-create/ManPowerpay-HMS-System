@@ -65,14 +65,17 @@ export default function EmployeeDashboard() {
         {/* Left 2 cols: Welcome + Stats */}
         <div className="lg:col-span-2 space-y-6">
           {/* Hero greeting */}
-          <div className="bg-gradient-primary rounded-2xl p-6 text-white relative overflow-hidden h-40 flex flex-col justify-center">
-            <div className="absolute right-0 top-0 w-48 h-48 bg-white/5 rounded-full -translate-y-12 translate-x-12" />
+          <div className="relative rounded-2xl p-6 text-white overflow-hidden h-40 flex flex-col justify-center"
+               style={{ background: 'linear-gradient(135deg, #18181B 0%, #27272A 100%)' }}>
+            {/* Amber glow */}
+            <div className="absolute -right-8 -top-8 w-40 h-40 rounded-full pointer-events-none"
+                 style={{ background: 'radial-gradient(circle, rgba(217,119,6,.25) 0%, transparent 70%)' }} />
+            <div className="absolute -left-4 bottom-0 w-32 h-32 rounded-full pointer-events-none"
+                 style={{ background: 'radial-gradient(circle, rgba(245,158,11,.1) 0%, transparent 70%)' }} />
             <div className="relative">
-              <p className="text-white/70 text-sm font-medium">{greeting()},</p>
-              <h1 className="text-3xl font-black mt-0.5">{user?.name} 👋</h1>
-              <p className="text-white/60 text-sm mt-1">
-                {format(today, "EEEE, d MMMM yyyy")}
-              </p>
+              <p className="text-zinc-400 text-xs font-medium tracking-wide">{greeting()},</p>
+              <h1 className="text-2xl font-semibold text-white mt-0.5 tracking-tight">{user?.name} 👋</h1>
+              <p className="text-zinc-500 text-xs mt-1 font-normal">{format(today, 'EEEE, d MMMM yyyy')}</p>
             </div>
           </div>
 

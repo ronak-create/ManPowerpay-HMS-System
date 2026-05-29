@@ -89,11 +89,11 @@ export default function LeaveManagement() {
 
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
         <button onClick={() => setActiveTab('approvals')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'approvals' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'approvals' ? 'bg-white text-amber-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
           <Clock size={14} /> Pending Approvals
         </button>
         <button onClick={() => setActiveTab('allocation')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'allocation' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'allocation' ? 'bg-white text-amber-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
           <ShieldCheck size={14} /> Balance Allocation
         </button>
       </div>
@@ -101,7 +101,7 @@ export default function LeaveManagement() {
       {activeTab === 'approvals' && (
         <div className="space-y-4 animate-fade-in">
           {loading ? (
-            <div className="flex justify-center py-12"><Loader className="animate-spin text-primary" /></div>
+            <div className="flex justify-center py-12"><Loader className="animate-spin text-amber-700" /></div>
           ) : leaves.length === 0 ? (
             <div className="card text-center py-12 bg-gray-50 border-dashed border-2">
               <Clock size={40} className="text-gray-200 mx-auto mb-2" />
@@ -112,7 +112,7 @@ export default function LeaveManagement() {
               {leaves.map(l => (
                 <div key={l.id} className="card flex flex-col sm:flex-row sm:items-center gap-4 group">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-amber-700 font-bold text-sm">
                       {l.employee?.user?.name?.[0]}
                     </div>
                     <div>

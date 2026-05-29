@@ -29,44 +29,52 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-surface flex">
       {/* Left panel — branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-primary flex-col justify-between p-12 relative overflow-hidden">
-        {/* Decorative circles */}
-        <div className="absolute -top-20 -right-20 w-80 h-80 bg-white/5 rounded-full" />
-        <div className="absolute -bottom-16 -left-16 w-64 h-64 bg-white/5 rounded-full" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-white/3 rounded-full" />
+      <div className="hidden lg:flex lg:w-[45%] flex-col justify-between p-12 relative overflow-hidden"
+           style={{ background: '#18181B' }}>
+        {/* Noise texture overlay */}
+        <div className="absolute inset-0 opacity-[0.03]"
+             style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
+
+        {/* Amber glow blob */}
+        <div className="absolute bottom-0 left-0 w-80 h-80 rounded-full pointer-events-none"
+             style={{ background: 'radial-gradient(circle, rgba(217,119,6,.15) 0%, transparent 70%)', transform: 'translate(-30%, 30%)' }} />
+        <div className="absolute top-0 right-0 w-60 h-60 rounded-full pointer-events-none"
+             style={{ background: 'radial-gradient(circle, rgba(245,158,11,.08) 0%, transparent 70%)', transform: 'translate(20%, -20%)' }} />
 
         <div className="relative">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-              <span className="text-white font-black">MP</span>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                 style={{ background: 'linear-gradient(135deg, #B45309, #F59E0B)' }}>
+              <span className="text-white font-bold text-sm">MP</span>
             </div>
-            <span className="text-white font-bold text-lg">ManpowerPay HMS</span>
+            <span className="text-white font-semibold text-base tracking-tight">ManpowerPay HMS</span>
           </div>
         </div>
 
         <div className="relative">
-          <h1 className="text-4xl font-black text-white leading-tight">
-            Manage your<br />workforce with<br />
-            <span className="text-blue-300">confidence.</span>
+          <p className="text-xs font-semibold uppercase tracking-widest mb-4"
+             style={{ color: 'rgba(217,119,6,.7)' }}>Trusted by 500+ companies</p>
+          <h1 className="text-4xl font-semibold text-white leading-[1.15] tracking-tight">
+            Payroll &amp; HR<br />
+            <span style={{ background: 'linear-gradient(135deg, #D97706, #F59E0B)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+              made effortless.
+            </span>
           </h1>
-          <p className="text-white/60 mt-4 text-sm leading-relaxed">
-            Complete HR & Payroll platform — attendance tracking, payroll processing,
-            statutory compliance, and more.
+          <p className="text-zinc-400 mt-4 text-sm leading-relaxed max-w-xs font-normal">
+            Attendance, payroll processing, statutory compliance, and payslips — all in one platform.
           </p>
 
-          <div className="flex gap-6 mt-8">
+          <div className="flex gap-5 mt-10">
             {[['Payroll', 'Auto-calculated'], ['Compliance', 'EPF/ESIC/PT'], ['Reports', 'MIS ready']].map(([t, s]) => (
               <div key={t}>
-                <div className="text-white font-bold text-sm">{t}</div>
-                <div className="text-white/50 text-xs">{s}</div>
+                <div className="text-white font-medium text-sm">{t}</div>
+                <div className="text-zinc-500 text-xs mt-0.5">{s}</div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="relative">
-          <p className="text-white/30 text-xs">© 2026 ManpowerPay HMS. All rights reserved.</p>
-        </div>
+        <p className="relative text-zinc-600 text-xs">© 2026 ManpowerPay HMS. All rights reserved.</p>
       </div>
 
       {/* Right panel — form */}

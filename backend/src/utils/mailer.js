@@ -27,10 +27,6 @@ export const sendOtpEmail = async (to, name, otp) => {
     });
   } catch (error) {
     console.error('Email sending failed:', error);
-    // In dev, we log OTP if email fails
-    if (process.env.NODE_ENV === 'development') {
-      console.log('DEV OTP:', otp);
-    }
   }
 };
 

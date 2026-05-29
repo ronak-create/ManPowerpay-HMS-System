@@ -21,6 +21,7 @@ import LeaveManagement from './pages/admin/LeaveManagement';
 import Reports from './pages/admin/Reports';
 import AuditLogs from './pages/admin/AuditLogs';
 import CompanySettings from './pages/admin/CompanySettings';
+import AdminResignations from './pages/admin/Resignations';
 
 // Employee
 import EmployeeLayout from './components/layout/EmployeeLayout';
@@ -28,6 +29,8 @@ import EmployeeDashboard from './pages/employee/Dashboard';
 import MyPayslips from './pages/employee/MyPayslips';
 import LeaveApplication from './pages/employee/LeaveApplication';
 import MyProfile from './pages/employee/MyProfile';
+import EmployeeResignation from './pages/employee/Resignation';
+import Documentation from './pages/shared/Documentation';
 
 const PrivateRoute = ({ children, role }) => {
   const { user, token } = useAuthStore();
@@ -76,6 +79,8 @@ export default function App() {
           <Route path="leaves" element={<LeaveManagement />} />
           <Route path="reports" element={<Reports />} />
           <Route path="audit-logs" element={<AuditLogs />} />
+          <Route path="resignations" element={<AdminResignations />} />
+          <Route path="docs" element={<Documentation />} />
         </Route>
 
         <Route path="/employee" element={<PrivateRoute role="employee"><EmployeeLayout /></PrivateRoute>}>
@@ -83,6 +88,8 @@ export default function App() {
           <Route path="payslips" element={<MyPayslips />} />
           <Route path="leaves" element={<LeaveApplication />} />
           <Route path="profile" element={<MyProfile />} />
+          <Route path="resignation" element={<EmployeeResignation />} />
+          <Route path="docs" element={<Documentation />} />
         </Route>
 
         <Route path="/" element={<Navigate to="/login" replace />} />

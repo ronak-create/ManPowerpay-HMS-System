@@ -3,15 +3,15 @@ import { forwardRef } from 'react';
 
 const Input = forwardRef(function Input({ label, error, hint, prefix, suffix, className = '', ...props }, ref) {
   return (
-    <div className="w-full">
+    <div className="w-full text-left">
       {label && (
-        <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">
+        <label className="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">
           {label}
         </label>
       )}
       <div className="relative">
         {prefix && (
-          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none text-sm">
             {prefix}
           </div>
         )}
@@ -27,13 +27,17 @@ const Input = forwardRef(function Input({ label, error, hint, prefix, suffix, cl
           {...props}
         />
         {suffix && (
-          <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+          <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none text-sm">
             {suffix}
           </div>
         )}
       </div>
-      {error && <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1">⚠ {error}</p>}
-      {hint && !error && <p className="text-gray-400 text-xs mt-1">{hint}</p>}
+      {error && (
+        <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1 font-medium">
+          <span>⚠</span> {error}
+        </p>
+      )}
+      {hint && !error && <p className="text-zinc-400 text-xs mt-1 font-normal">{hint}</p>}
     </div>
   );
 });

@@ -113,7 +113,8 @@ export default function PayrollRun() {
       
       {step === 1 && (
         <div className="space-y-6">
-          <div className="card bg-gradient-primary text-white flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="card text-white flex flex-col md:flex-row md:items-center justify-between gap-6"
+               style={{ background: 'linear-gradient(135deg, #B45309, #D97706)' }}>
             <div>
               <h2 className="text-xl font-bold">Current Payroll Period</h2>
               <p className="text-white/70 text-sm">{format(new Date(), 'MMMM yyyy')}</p>
@@ -121,7 +122,7 @@ export default function PayrollRun() {
             <button 
               onClick={startPayroll} 
               disabled={loading} 
-              className="bg-white text-primary px-8 py-3 rounded-xl font-bold shadow-lg hover:bg-primary-50 transition disabled:opacity-50"
+              className="bg-white text-amber-700 px-8 py-3 rounded-xl font-bold shadow-lg hover:bg-primary-50 transition disabled:opacity-50"
             >
               {loading ? 'Processing...' : 'Run Payroll Now'}
             </button>
@@ -159,7 +160,7 @@ export default function PayrollRun() {
                       </td>
                       <td className="px-6 py-4 text-gray-500 font-medium">{r._count?.payslips ?? 0}</td>
                       <td className="px-6 py-4 text-right">
-                        <button onClick={() => viewRun(r)} className="p-2 text-primary hover:bg-primary/5 rounded-lg transition">
+                        <button onClick={() => viewRun(r)} className="p-2 text-amber-700 hover:bg-primary/5 rounded-lg transition">
                           <Eye size={18} />
                         </button>
                       </td>
@@ -225,7 +226,7 @@ export default function PayrollRun() {
                     <th className="px-4 py-3 text-right">Gross Pay</th>
                     <th className="px-4 py-3 text-right">LWP Ded.</th>
                     <th className="px-4 py-3 text-right">Other Ded.</th>
-                    <th className="px-4 py-3 text-right font-bold text-primary">Net Pay</th>
+                    <th className="px-4 py-3 text-right font-bold text-amber-700">Net Pay</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -244,7 +245,7 @@ export default function PayrollRun() {
                         <td className="px-4 py-3 text-right font-medium text-gray-800">{formatINR(p.grossPayable)}</td>
                         <td className="px-4 py-3 text-right font-bold text-red-500">{lwpLine > 0 ? `-${formatINR(lwpLine)}` : '—'}</td>
                         <td className="px-4 py-3 text-right font-medium text-gray-500">{formatINR(otherDed)}</td>
-                        <td className="px-4 py-3 text-right font-black text-primary text-sm">{formatINR(p.netPay)}</td>
+                        <td className="px-4 py-3 text-right font-black text-amber-700 text-sm">{formatINR(p.netPay)}</td>
                       </tr>
                     );
                   })}
