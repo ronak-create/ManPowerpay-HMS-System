@@ -16,91 +16,243 @@ export const downloadBulkTemplate = asyncHandler(async (req, res) => {
     process.cwd(),
     "uploads/templates/employee_bulk_template.xlsx",
   );
-  if (!fs.existsSync(filePath)) {
-    const workbook = new ExcelJS.Workbook();
-    const sheet = workbook.addWorksheet("Employees");
-    sheet.columns = [
-      { header: "Employee Name", key: "name", width: 25 },
-      { header: "Employee ID", key: "empCode", width: 15 },
-      { header: "Email", key: "email", width: 25 },
-      { header: "Mobile", key: "mobile", width: 15 },
-      { header: "Designation", key: "designation", width: 20 },
-      { header: "Department", key: "department", width: 20 },
-      { header: "Site", key: "site", width: 20 },
-      { header: "Joining Date (YYYY-MM-DD)", key: "doj", width: 25 },
-      { header: "Annual CTC", key: "annualCTC", width: 15 },
-      { header: 'EPF Applicable (true/false/blank)', key: 'epfApplicable', width: 30 },
-      { header: 'ESIC Applicable (true/false/blank)', key: 'esicApplicable', width: 30 },
-      { header: 'PT Applicable (true/false/blank)', key: 'ptApplicable', width: 30 },
-      { header: 'TDS Projected Annual Tax (0 = exempt, blank = auto)', key: 'tdsProjectedTax', width: 40 },
-    ];
-    sheet.addRow({
-      name: "John Doe",
-      empCode: "EMP101",
-      email: "john@example.com",
-      mobile: "9876543210",
-      designation: "Software Engineer",
-      department: "Engineering",
-      site: "Head Office",
-      doj: "2024-01-01",
-      annualCTC: "600000",
-      epfApplicable: '',
-      esicApplicable: '',
-      ptApplicable: '',
-      tdsProjectedTax: '',
-    });
-    await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
-    await workbook.xlsx.writeFile(filePath);
-  }
+  
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Employees");
+  sheet.columns = [
+    { header: "Employee Name*", key: "name", width: 25 },
+    { header: "Employee ID*", key: "empCode", width: 15 },
+    { header: "Email*", key: "email", width: 25 },
+    { header: "Mobile*", key: "mobile", width: 15 },
+    { header: "Designation*", key: "designation", width: 20 },
+    { header: "Department", key: "department", width: 20 },
+    { header: "Site", key: "site", width: 20 },
+    { header: "Salary Template", key: "salaryTemplate", width: 20 },
+    { header: "Joining Date* (YYYY-MM-DD)", key: "doj", width: 25 },
+    { header: "Annual CTC*", key: "annualCTC", width: 15 },
+    { header: "Date of Birth (YYYY-MM-DD)", key: "dob", width: 25 },
+    { header: "Gender", key: "gender", width: 10 },
+    { header: "Address", key: "address", width: 30 },
+    { header: "Emergency Contact", key: "emergencyContact", width: 20 },
+    { header: "Emergency Phone", key: "emergencyPhone", width: 15 },
+    { header: "Bank Name", key: "bankName", width: 20 },
+    { header: "Account Number", key: "bankAccountNo", width: 20 },
+    { header: "IFSC Code", key: "ifscCode", width: 15 },
+    { header: "PF Account No", key: "pfAccountNo", width: 20 },
+    { header: "UAN No", key: "uanNo", width: 15 },
+    { header: "ESIC No", key: "esicNo", width: 15 },
+    { header: "PAN", key: "pan", width: 15 },
+    { header: "Aadhaar No", key: "aadhaarNo", width: 20 },
+    { header: 'EPF Applicable (true/false/blank)', key: 'epfApplicable', width: 30 },
+    { header: 'ESIC Applicable (true/false/blank)', key: 'esicApplicable', width: 30 },
+    { header: 'PT Applicable (true/false/blank)', key: 'ptApplicable', width: 30 },
+    { header: 'TDS Projected Annual Tax', key: 'tdsProjectedTax', width: 25 },
+  ];
+
+  sheet.addRow({
+    name: "John Doe",
+    empCode: "EMP101",
+    email: "john@example.com",
+    mobile: "9876543210",
+    designation: "Software Engineer",
+    department: "Engineering",
+    site: "Head Office",
+    salaryTemplate: "Standard Template",
+    doj: "2024-01-01",
+    annualCTC: "600000",
+    dob: "1995-05-15",
+    gender: "Male",
+    address: "123 Main St, City",
+    emergencyContact: "Jane Doe",
+    emergencyPhone: "9876543211",
+    bankName: "HDFC Bank",
+    bankAccountNo: "50100123456789",
+    ifscCode: "HDFC0001234",
+    pfAccountNo: "MH/PUN/12345/678",
+    uanNo: "100123456789",
+    esicNo: "31123456780011001",
+    pan: "ABCDE1234F",
+    aadhaarNo: "123456789012",
+    epfApplicable: '',
+    esicApplicable: '',
+    ptApplicable: '',
+    tdsProjectedTax: '',
+  });
+
+  await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+  await workbook.xlsx.writeFile(filePath);
   res.download(filePath);
 });
 
-// POST /api/employees/bulk-upload
+// POST /api/employees/bulk-upload — parse and validate Excel
 export const bulkUploadEmployees = asyncHandler(async (req, res) => {
   if (!req.file) throw new ApiError(400, "No file uploaded");
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(req.file.buffer);
   const sheet = workbook.getWorksheet(1);
-  const results = { created: 0, failed: [] };
   const rows = [];
+  
   sheet.eachRow((row, rowNumber) => {
     if (rowNumber === 1) return;
     rows.push({
       rowNumber,
-      name: row.getCell(1).text,
-      empCode: row.getCell(2).text,
-      email: row.getCell(3).text,
-      mobile: row.getCell(4).text,
-      designation: row.getCell(5).text,
-      department: row.getCell(6).text,
-      site: row.getCell(7).text,
-      doj: row.getCell(8).text,
-      annualCTC: row.getCell(9).text,
-      epfApplicable: row.getCell(10).text.trim(),
-      esicApplicable: row.getCell(11).text.trim(),
-      ptApplicable: row.getCell(12).text.trim(),
-      tdsProjectedTax: row.getCell(13).text.trim(),
+      name: row.getCell(1).text?.trim(),
+      empCode: row.getCell(2).text?.trim(),
+      email: row.getCell(3).text?.trim(),
+      mobile: row.getCell(4).text?.trim(),
+      designation: row.getCell(5).text?.trim(),
+      department: row.getCell(6).text?.trim(),
+      site: row.getCell(7).text?.trim(),
+      salaryTemplate: row.getCell(8).text?.trim(),
+      doj: row.getCell(9).text?.trim(),
+      annualCTC: row.getCell(10).text?.trim(),
+      dob: row.getCell(11).text?.trim(),
+      gender: row.getCell(12).text?.trim(),
+      address: row.getCell(13).text?.trim(),
+      emergencyContact: row.getCell(14).text?.trim(),
+      emergencyPhone: row.getCell(15).text?.trim(),
+      bankName: row.getCell(16).text?.trim(),
+      bankAccountNo: row.getCell(17).text?.trim(),
+      ifscCode: row.getCell(18).text?.trim(),
+      pfAccountNo: row.getCell(19).text?.trim(),
+      uanNo: row.getCell(20).text?.trim(),
+      esicNo: row.getCell(21).text?.trim(),
+      pan: row.getCell(22).text?.trim(),
+      aadhaarNo: row.getCell(23).text?.trim(),
+      epfApplicable: row.getCell(24).text?.trim(),
+      esicApplicable: row.getCell(25).text?.trim(),
+      ptApplicable: row.getCell(26).text?.trim(),
+      tdsProjectedTax: row.getCell(27).text?.trim(),
     });
   });
-  const hash = await bcrypt.hash("Welcome@1234", 12);
+
+  const validatedRows = [];
+  const [existingUsers, existingEmps, depts, sites, templates] = await Promise.all([
+    prisma.user.findMany({ select: { email: true, mobile: true } }),
+    prisma.employee.findMany({ select: { empCode: true } }),
+    prisma.department.findMany(),
+    prisma.site.findMany(),
+    prisma.salaryTemplate.findMany(),
+  ]);
+
+  const existingEmails = new Set(existingUsers.map(u => u.email.toLowerCase()));
+  const existingMobiles = new Set(existingUsers.map(u => u.mobile));
+  const existingCodes = new Set(existingEmps.map(e => e.empCode));
+
   for (const r of rows) {
+    const errors = [];
+    if (!r.name) errors.push("Name is required");
+    if (!r.empCode) errors.push("Employee ID is required");
+    if (!r.email) errors.push("Email is required");
+    if (!r.mobile) errors.push("Mobile is required");
+    if (!r.doj) errors.push("Joining Date is required");
+
+    if (r.email && existingEmails.has(r.email.toLowerCase())) errors.push("Email already exists");
+    if (r.mobile && existingMobiles.has(r.mobile)) errors.push("Mobile already exists");
+    if (r.empCode && existingCodes.has(r.empCode)) errors.push("Employee ID already exists");
+
+    const dept = depts.find(d => d.name.toLowerCase() === r.department?.toLowerCase());
+    const site = sites.find(s => s.name.toLowerCase() === r.site?.toLowerCase());
+    const template = templates.find(t => t.name.toLowerCase() === r.salaryTemplate?.toLowerCase());
+
+    const info = [];
+    if (r.department && !dept) info.push(`Department "${r.department}" will be created`);
+    if (r.site && !site) info.push(`Site "${r.site}" will be created`);
+    
+    if (r.salaryTemplate && !template) errors.push(`Salary Template "${r.salaryTemplate}" not found`);
+
+    validatedRows.push({
+      ...r,
+      id: Math.random().toString(36).substr(2, 9), // temp frontend id
+      isValid: errors.length === 0,
+      errors,
+      info,
+      departmentId: dept?.id,
+      siteId: site?.id,
+      salaryTemplateId: template?.id,
+    });
+  }
+
+  res.json(new ApiResponse(200, validatedRows));
+});
+
+// POST /api/employees/bulk-finalize — save the validated list
+export const finalizeBulkUpload = asyncHandler(async (req, res) => {
+  const { employees } = req.body;
+  if (!employees || !Array.isArray(employees)) throw new ApiError(400, "Invalid data");
+
+  const results = { created: 0, failed: [] };
+  const hash = await bcrypt.hash("Welcome@1234", 12);
+  const company = await prisma.company.findFirst();
+  if (!company) throw new ApiError(404, "Company not configured");
+
+  // Caches to avoid redundant DB calls during the loop
+  const deptCache = {};
+  const siteCache = {};
+
+  for (const r of employees) {
     try {
-      if (!r.name || !r.email || !r.mobile || !r.empCode)
-        throw new Error("Missing required fields");
-      const existing = await prisma.user.findFirst({
-        where: { OR: [{ email: r.email.toLowerCase() }, { mobile: r.mobile }] },
+      // Re-verify uniqueness
+      const conflict = await prisma.user.findFirst({
+        where: { OR: [{ email: r.email.toLowerCase() }, { mobile: r.mobile }] }
       });
-      if (existing) throw new Error("Email or mobile already exists");
-      const empExisting = await prisma.employee.findUnique({
-        where: { empCode: r.empCode },
-      });
-      if (empExisting) throw new Error("Employee code already exists");
-      const dept = await prisma.department.findFirst({
-        where: { name: { equals: r.department, mode: "insensitive" } },
-      });
-      const site = await prisma.site.findFirst({
-        where: { name: { equals: r.site, mode: "insensitive" } },
-      });
+      if (conflict) throw new Error("Email or mobile already exists");
+
+      const codeConflict = await prisma.employee.findUnique({ where: { empCode: r.empCode } });
+      if (codeConflict) throw new Error("Employee ID already exists");
+
+      let finalDeptId = r.departmentId;
+      let finalSiteId = r.siteId;
+
+      // Find or create Department
+      if (!finalDeptId && r.department) {
+        const normalizedDept = r.department.trim();
+        if (deptCache[normalizedDept.toLowerCase()]) {
+          finalDeptId = deptCache[normalizedDept.toLowerCase()];
+        } else {
+          const dept = await prisma.department.upsert({
+            where: { id: 'unknown' }, // hack to use upsert with name-based finding
+            create: { name: normalizedDept, companyId: company.id },
+            update: {}, // Not used if not found
+          });
+          // Note: prisma upsert needs a unique field. Department name is NOT unique in schema.
+          // Let's use findFirst then create.
+          const existingDept = await prisma.department.findFirst({
+            where: { name: { equals: normalizedDept, mode: 'insensitive' } }
+          });
+          if (existingDept) {
+            finalDeptId = existingDept.id;
+          } else {
+            const newDept = await prisma.department.create({
+              data: { name: normalizedDept, companyId: company.id }
+            });
+            finalDeptId = newDept.id;
+          }
+          deptCache[normalizedDept.toLowerCase()] = finalDeptId;
+        }
+      }
+
+      // Find or create Site
+      if (!finalSiteId && r.site) {
+        const normalizedSite = r.site.trim();
+        if (siteCache[normalizedSite.toLowerCase()]) {
+          finalSiteId = siteCache[normalizedSite.toLowerCase()];
+        } else {
+          const existingSite = await prisma.site.findFirst({
+            where: { name: { equals: normalizedSite, mode: 'insensitive' } }
+          });
+          if (existingSite) {
+            finalSiteId = existingSite.id;
+          } else {
+            const newSite = await prisma.site.create({
+              data: { name: normalizedSite, companyId: company.id }
+            });
+            finalSiteId = newSite.id;
+          }
+          siteCache[normalizedSite.toLowerCase()] = finalSiteId;
+        }
+      }
+
       await prisma.$transaction(async (tx) => {
         const user = await tx.user.create({
           data: {
@@ -115,28 +267,39 @@ export const bulkUploadEmployees = asyncHandler(async (req, res) => {
           data: {
             userId: user.id,
             empCode: r.empCode,
-            departmentId: dept?.id,
-            siteId: site?.id,
+            departmentId: finalDeptId,
+            siteId: finalSiteId,
+            salaryTemplateId: r.salaryTemplateId,
             designation: r.designation,
             dateOfJoining: new Date(r.doj),
             annualCTC: Number(r.annualCTC) || 0,
-            epfApplicable: r.epfApplicable !== '' ? r.epfApplicable.toLowerCase() === 'true' : null,
-            esicApplicable: r.esicApplicable !== '' ? r.esicApplicable.toLowerCase() === 'true' : null,
-            ptApplicable: r.ptApplicable !== '' ? r.ptApplicable.toLowerCase() === 'true' : null,
+            dateOfBirth: r.dob ? new Date(r.dob) : null,
+            gender: r.gender,
+            address: r.address,
+            emergencyContact: r.emergencyContact,
+            emergencyPhone: r.emergencyPhone,
+            bankName: r.bankName,
+            bankAccountNo: r.bankAccountNo,
+            ifscCode: r.ifscCode,
+            pfAccountNo: r.pfAccountNo,
+            uanNo: r.uanNo,
+            esicNo: r.esicNo,
+            pan: r.pan,
+            aadhaarNo: r.aadhaarNo,
+            epfApplicable: r.epfApplicable !== '' ? r.epfApplicable?.toLowerCase() === 'true' : null,
+            esicApplicable: r.esicApplicable !== '' ? r.esicApplicable?.toLowerCase() === 'true' : null,
+            ptApplicable: r.ptApplicable !== '' ? r.ptApplicable?.toLowerCase() === 'true' : null,
             tdsProjectedTax: r.tdsProjectedTax !== '' ? Number(r.tdsProjectedTax) : null,
           },
         });
       });
       results.created++;
     } catch (err) {
-      results.failed.push({
-        row: r.rowNumber,
-        empCode: r.empCode,
-        reason: err.message,
-      });
+      results.failed.push({ empCode: r.empCode, reason: err.message });
     }
   }
-  res.json(new ApiResponse(200, results, "Bulk upload completed"));
+
+  res.json(new ApiResponse(200, results, `Successfully processed ${results.created} employees`));
 });
 
 // GET /api/employees

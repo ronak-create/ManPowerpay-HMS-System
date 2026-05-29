@@ -4,13 +4,13 @@ import { verifyJWT } from '../../middleware/auth.js';
 import { requireRole } from '../../middleware/roles.js';
 
 const router = Router();
-router.use(verifyJWT, requireRole('admin'));
 
-router.get('/', listPayrollRuns);
-router.post('/run', createPayrollRun);
-router.get('/:runId', getPayrollRun);
-router.patch('/:runId/approve', approvePayroll);
-router.patch('/:runId/lock', lockPayroll);
-router.get('/:runId/bank-file', getBankFile);
+// Apply verifyJWT and requireRole to each route explicitly
+router.get('/', verifyJWT, requireRole('admin'), listPayrollRuns);
+router.post('/run', verifyJWT, requireRole('admin'), createPayrollRun);
+router.get('/:runId', verifyJWT, requireRole('admin'), getPayrollRun);
+router.patch('/:runId/approve', verifyJWT, requireRole('admin'), approvePayroll);
+router.patch('/:runId/lock', verifyJWT, requireRole('admin'), lockPayroll);
+router.get('/:runId/bank-file', verifyJWT, requireRole('admin'), getBankFile);
 
 export default router;

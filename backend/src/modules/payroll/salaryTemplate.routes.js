@@ -31,4 +31,21 @@ router.put('/:id', asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, null, 'Template updated'));
 }));
 
+router.delete('/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  
+  // Check if any employees are using this template
+  const empCount = await prisma.employee.count({ where: { salaryTemplateId: id } });
+  if (empCount > 0) {
+    throw new ApiError(400, `Cannot delete template. ${empCount} employee(s) are currently assigned to it.`);
+  }
+
+  await prisma.$transaction([
+    prisma.salaryComponent.deleteMany({ where: { templateId: id } }),
+    prisma.salaryTemplate.delete({ where: { id } })
+  ]);
+  
+  res.json(new ApiResponse(200, null, 'Template deleted successfully'));
+}));
+
 export default router;

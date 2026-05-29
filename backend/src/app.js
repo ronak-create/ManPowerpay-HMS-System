@@ -29,7 +29,9 @@ app.use(helmet());
 // Replace the cors line:
 app.use(cors({
   origin: process.env.CLIENT_URL?.split(',') || 'http://localhost:5173',
-  credentials: true
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization', 'authorization'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -43,7 +45,7 @@ const loginLimiter = rateLimit({
 app.use('/api/auth/login', loginLimiter);
 
 const generalLimiter = rateLimit({ windowMs: 60 * 1000, max: 200 });
-app.use('/api/', generalLimiter);
+app.use('/api', generalLimiter);
 
 // Routes
 app.use('/api/auth', authRoutes);

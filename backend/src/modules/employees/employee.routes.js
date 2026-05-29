@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
-import { listEmployees, getEmployee, createEmployee, updateEmployee, toggleEmployeeStatus, uploadDocument, getMeta, bulkUploadEmployees, downloadBulkTemplate, generateAppointmentLetter, downloadAppointmentLetter, downloadRelievingLetter } from './employee.controller.js';
+import { listEmployees, getEmployee, createEmployee, updateEmployee, toggleEmployeeStatus, uploadDocument, getMeta, bulkUploadEmployees, finalizeBulkUpload, downloadBulkTemplate, generateAppointmentLetter, downloadAppointmentLetter, downloadRelievingLetter } from './employee.controller.js';
 import { verifyJWT } from '../../middleware/auth.js';
 import { requireRole } from '../../middleware/roles.js';
 
@@ -18,6 +18,7 @@ router.use(verifyJWT);
 router.get('/meta', getMeta);
 router.get('/bulk-template', requireRole('admin'), downloadBulkTemplate);
 router.post('/bulk-upload', requireRole('admin'), bulkUpload.single('file'), bulkUploadEmployees);
+router.post('/bulk-finalize', requireRole('admin'), finalizeBulkUpload);
 router.get('/:id/appointment-letter', verifyJWT, downloadAppointmentLetter);
 router.get('/:id/relieving-letter', verifyJWT, downloadRelievingLetter);
 router.get('/', requireRole('admin'), listEmployees);

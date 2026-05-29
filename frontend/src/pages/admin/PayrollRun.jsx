@@ -20,6 +20,13 @@ export default function PayrollRun() {
   };
 
   const startPayroll = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Session expired. Please log in again.');
+      navigate('/login');
+      return;
+    }
+
     const month = new Date().getMonth() + 1;
     const year = new Date().getFullYear();
     setLoading(true);
@@ -31,7 +38,8 @@ export default function PayrollRun() {
       setStep(2);
       fetchRuns();
     } catch (err) {
-      toast.error('Failed to start payroll');
+      console.error('Payroll start error:', err.response?.data);
+      toast.error(err.response?.data?.message || 'Failed to start payroll');
     } finally {
       setLoading(false);
     }

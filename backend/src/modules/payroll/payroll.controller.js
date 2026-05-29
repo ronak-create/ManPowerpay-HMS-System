@@ -100,7 +100,10 @@ export const createPayrollRun = asyncHandler(async (req, res) => {
       advanceEmi: activeAdvance?.emi || 0
     });
 
-    return { employeeId: emp.id, payrollRunId: run.id, month, year, ...result };
+    // Omit fields not in the Payslip database model (like basicPayable)
+    const { basicPayable, ...dbResult } = result;
+
+    return { employeeId: emp.id, payrollRunId: run.id, month, year, ...dbResult };
   }));
 
   // Upsert all payslips
