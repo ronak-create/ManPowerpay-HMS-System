@@ -73,6 +73,7 @@ export default function App() {
           <Route path="employees/:id/edit" element={<EmployeeForm />} />
           <Route path="salary-templates" element={<SalaryTemplates />} />
           <Route path="payroll" element={<PayrollRun />} />
+          <Route path="leaves" element={<LeaveManagement />} />
           <Route path="reports" element={<Reports />} />
           <Route path="audit-logs" element={<AuditLogs />} />
         </Route>
