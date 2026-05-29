@@ -29,6 +29,10 @@ export const downloadBulkTemplate = asyncHandler(async (req, res) => {
       { header: "Site", key: "site", width: 20 },
       { header: "Joining Date (YYYY-MM-DD)", key: "doj", width: 25 },
       { header: "Annual CTC", key: "annualCTC", width: 15 },
+      { header: 'EPF Applicable (true/false/blank)', key: 'epfApplicable', width: 30 },
+      { header: 'ESIC Applicable (true/false/blank)', key: 'esicApplicable', width: 30 },
+      { header: 'PT Applicable (true/false/blank)', key: 'ptApplicable', width: 30 },
+      { header: 'TDS Projected Annual Tax (0 = exempt, blank = auto)', key: 'tdsProjectedTax', width: 40 },
     ];
     sheet.addRow({
       name: "John Doe",
@@ -40,6 +44,10 @@ export const downloadBulkTemplate = asyncHandler(async (req, res) => {
       site: "Head Office",
       doj: "2024-01-01",
       annualCTC: "600000",
+      epfApplicable: '',
+      esicApplicable: '',
+      ptApplicable: '',
+      tdsProjectedTax: '',
     });
     await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
     await workbook.xlsx.writeFile(filePath);
@@ -68,6 +76,10 @@ export const bulkUploadEmployees = asyncHandler(async (req, res) => {
       site: row.getCell(7).text,
       doj: row.getCell(8).text,
       annualCTC: row.getCell(9).text,
+      epfApplicable: row.getCell(10).text.trim(),
+      esicApplicable: row.getCell(11).text.trim(),
+      ptApplicable: row.getCell(12).text.trim(),
+      tdsProjectedTax: row.getCell(13).text.trim(),
     });
   });
   const hash = await bcrypt.hash("Welcome@1234", 12);
@@ -108,6 +120,10 @@ export const bulkUploadEmployees = asyncHandler(async (req, res) => {
             designation: r.designation,
             dateOfJoining: new Date(r.doj),
             annualCTC: Number(r.annualCTC) || 0,
+            epfApplicable: r.epfApplicable !== '' ? r.epfApplicable.toLowerCase() === 'true' : null,
+            esicApplicable: r.esicApplicable !== '' ? r.esicApplicable.toLowerCase() === 'true' : null,
+            ptApplicable: r.ptApplicable !== '' ? r.ptApplicable.toLowerCase() === 'true' : null,
+            tdsProjectedTax: r.tdsProjectedTax !== '' ? Number(r.tdsProjectedTax) : null,
           },
         });
       });
@@ -209,6 +225,10 @@ export const createEmployee = asyncHandler(async (req, res) => {
     bankName,
     bankAccountNo,
     ifscCode,
+    epfApplicable,
+    esicApplicable,
+    ptApplicable,
+    tdsProjectedTax,
   } = req.body;
   const existing = await prisma.user.findFirst({
     where: { OR: [{ email }, { mobile }] },
@@ -250,6 +270,10 @@ export const createEmployee = asyncHandler(async (req, res) => {
         bankName,
         bankAccountNo,
         ifscCode,
+        epfApplicable: epfApplicable !== undefined && epfApplicable !== '' ? Boolean(epfApplicable) : null,
+        esicApplicable: esicApplicable !== undefined && esicApplicable !== '' ? Boolean(esicApplicable) : null,
+        ptApplicable: ptApplicable !== undefined && ptApplicable !== '' ? Boolean(ptApplicable) : null,
+        tdsProjectedTax: tdsProjectedTax !== undefined && tdsProjectedTax !== '' ? Number(tdsProjectedTax) : null,
       },
     });
     return { user, emp };
@@ -295,6 +319,10 @@ export const updateEmployee = asyncHandler(async (req, res) => {
     bankName,
     bankAccountNo,
     ifscCode,
+    epfApplicable,
+    esicApplicable,
+    ptApplicable,
+    tdsProjectedTax,
   } = req.body;
   await prisma.$transaction([
     prisma.user.update({ where: { id: emp.userId }, data: { name, mobile } }),
@@ -319,6 +347,10 @@ export const updateEmployee = asyncHandler(async (req, res) => {
         bankName,
         bankAccountNo,
         ifscCode,
+        epfApplicable: epfApplicable !== undefined && epfApplicable !== '' ? Boolean(epfApplicable) : undefined,
+        esicApplicable: esicApplicable !== undefined && esicApplicable !== '' ? Boolean(esicApplicable) : undefined,
+        ptApplicable: ptApplicable !== undefined && ptApplicable !== '' ? Boolean(ptApplicable) : undefined,
+        tdsProjectedTax: tdsProjectedTax !== undefined && tdsProjectedTax !== '' ? Number(tdsProjectedTax) : undefined,
       },
     }),
   ]);

@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard, FileText, User, LogOut, ChevronRight, Bell, Briefcase, Menu
+  LayoutDashboard, FileText, User, LogOut, ChevronRight, Briefcase, Menu
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import MobileSidebar from './MobileSidebar';
+import NotificationBell from './NotificationBell';
 
 const navGroups = [
   {
@@ -109,9 +110,7 @@ export default function EmployeeLayout() {
             <p className="text-xs text-gray-400 hidden sm:block">ManpowerPay HMS — Employee</p>
           </div>
           <div className="flex items-center gap-2">
-            <button className="btn-icon text-gray-400 hover:text-gray-600 hover:bg-gray-100">
-              <Bell size={18} />
-            </button>
+            <NotificationBell />
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
               {user?.name?.[0]?.toUpperCase()}
             </div>

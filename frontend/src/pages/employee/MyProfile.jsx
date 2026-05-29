@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { User, Lock, Building, CreditCard, Save, Eye, EyeOff, Loader, FileText, Download, Calendar, IndianRupee } from 'lucide-react';
+import { User, Lock, Building, CreditCard, Save, Eye, EyeOff, Loader, FileText, Download, Calendar, IndianRupee, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import api from '../../api/axios';

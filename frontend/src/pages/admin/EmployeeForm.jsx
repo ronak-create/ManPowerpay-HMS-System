@@ -35,6 +35,10 @@ export default function EmployeeForm() {
         mobile: data.user.mobile,
         dateOfJoining: data.dateOfJoining ? data.dateOfJoining.split('T')[0] : '',
         dateOfBirth: data.dateOfBirth ? data.dateOfBirth.split('T')[0] : '',
+        epfApplicable: data.epfApplicable !== null && data.epfApplicable !== undefined ? String(data.epfApplicable) : '',
+        esicApplicable: data.esicApplicable !== null && data.esicApplicable !== undefined ? String(data.esicApplicable) : '',
+        ptApplicable: data.ptApplicable !== null && data.ptApplicable !== undefined ? String(data.ptApplicable) : '',
+        tdsProjectedTax: data.tdsProjectedTax !== null && data.tdsProjectedTax !== undefined ? data.tdsProjectedTax : '',
       });
     } catch (err) {
       toast.error('Failed to load employee');
@@ -64,6 +68,7 @@ export default function EmployeeForm() {
     { id: 'assignment', label: 'Assignment' },
     { id: 'personal', label: 'Personal' },
     { id: 'statutory', label: 'Statutory' },
+    { id: 'statutory_overrides', label: 'Statutory Overrides' },
     { id: 'bank', label: 'Bank' },
   ];
 
@@ -182,6 +187,55 @@ export default function EmployeeForm() {
               <input {...register('esicNo')} placeholder="ESIC No" className="w-full border rounded-lg px-4 py-2" />
               <input {...register('pan')} placeholder="PAN" className="w-full border rounded-lg px-4 py-2" />
               <input {...register('aadhaarNo')} placeholder="Aadhaar No" className="w-full border rounded-lg px-4 py-2" />
+            </div>
+          )}
+
+          {activeTab === 'statutory_overrides' && (
+            <div className="space-y-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
+                <strong>Note:</strong> Leave any field blank to use the default from the salary template / company settings.
+                Set explicitly to override for this employee only.
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">EPF Applicable</label>
+                  <select {...register('epfApplicable')} className="w-full border rounded-lg px-4 py-2">
+                    <option value="">Use Template Default</option>
+                    <option value="true">Yes — Deduct EPF</option>
+                    <option value="false">No — Exempt from EPF</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ESIC Applicable</label>
+                  <select {...register('esicApplicable')} className="w-full border rounded-lg px-4 py-2">
+                    <option value="">Use Template Default</option>
+                    <option value="true">Yes — Deduct ESIC</option>
+                    <option value="false">No — Exempt from ESIC</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Professional Tax (PT) Applicable</label>
+                  <select {...register('ptApplicable')} className="w-full border rounded-lg px-4 py-2">
+                    <option value="">Use Company Default (On)</option>
+                    <option value="true">Yes — Deduct PT</option>
+                    <option value="false">No — Exempt from PT</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">TDS — Projected Annual Tax (₹)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="100"
+                    {...register('tdsProjectedTax')}
+                    className="w-full border rounded-lg px-4 py-2"
+                    placeholder="Leave blank for auto / 0 for exempt"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Set to 0 to mark employee as TDS-exempt. Leave blank to use payroll run default.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 

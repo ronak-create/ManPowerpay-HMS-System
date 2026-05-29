@@ -22,7 +22,7 @@ export function calculatePayroll({ employee, attendance, company, ptSlabs, tdsIn
   const deductions = [];
   const employerContrib = [];
 
-  // Step 1: Compute basic pay (Full and Actual pro-rated)
+  // Step 1: Basic pay
   const basicComp = components.find(c => c.name.toLowerCase() === 'basic' && c.type === 'earning');
   let basicFull = 0;
   if (basicComp) {
@@ -34,15 +34,15 @@ export function calculatePayroll({ employee, attendance, company, ptSlabs, tdsIn
   }
   const basicActual = round(basicFull * proRateFactor);
 
-  // Step 2: OT earnings (based on full basic)
+  // Step 2: OT earnings
   const otRate = basicFull > 0 ? (basicFull / 26 / 8) * (company.otMultiplier || 2) : 0;
   const otEarnings = round(otRate * (otHours || 0));
 
-  // Step 3: Total Gross (Full monthly + OT)
+  // Step 3: Gross
   const grossFull = round(monthlyCTC + otEarnings);
   const lwpDeduction = round(monthlyCTC * (1 - proRateFactor));
 
-  // Step 4: Rebuild earnings breakdown (Full values)
+  // Step 4: Earnings breakdown
   components.filter(c => c.type === 'earning').forEach(c => {
     let amount = 0;
     if (c.name.toLowerCase() === 'basic') {
@@ -68,22 +68,39 @@ export function calculatePayroll({ employee, attendance, company, ptSlabs, tdsIn
     deductions.push({ name: `LWP Deduction (${lwpDays} days)`, amount: lwpDeduction });
   }
 
-  // Statutory on pro-rated basic/gross
   const grossActual = round(monthlyCTC * proRateFactor + otEarnings);
-  
-  // EPF Employee
-  const epfEE = round(0.12 * Math.min(basicActual, 15000));
 
-  // ESIC Employee
-  const esicEE = grossActual <= 21000 ? round(0.0075 * grossActual) : 0;
+  // Determine applicability — employee override takes priority over template
+  const epfApplicable = employee.epfApplicable !== null && employee.epfApplicable !== undefined
+    ? employee.epfApplicable
+    : components.some(c => c.isEpfApplicable && c.type === 'earning');
+
+  const esicApplicable = employee.esicApplicable !== null && employee.esicApplicable !== undefined
+    ? employee.esicApplicable
+    : components.some(c => c.isEsicApplicable && c.type === 'earning');
+
+  const ptApplicable = employee.ptApplicable !== null && employee.ptApplicable !== undefined
+    ? employee.ptApplicable
+    : true; // default on
+
+  // EPF Employee
+  const epfEE = epfApplicable ? round(0.12 * Math.min(basicActual, 15000)) : 0;
+
+  // ESIC Employee (only if gross <= 21000)
+  const esicEE = (esicApplicable && grossActual <= 21000) ? round(0.0075 * grossActual) : 0;
 
   // PT
-  const ptAmount = computePT(grossActual, ptSlabs);
+  const ptAmount = ptApplicable ? computePT(grossActual, ptSlabs) : 0;
 
-  // TDS
+  // TDS — use employee-level projected tax if set, else use tdsInfo passed in
+  let effectiveProjectedTax = tdsInfo?.projectedAnnualTax || 0;
+  if (employee.tdsProjectedTax !== null && employee.tdsProjectedTax !== undefined) {
+    effectiveProjectedTax = employee.tdsProjectedTax;
+  }
+
   let tds = 0;
-  if (tdsInfo && tdsInfo.projectedAnnualTax > 0 && tdsInfo.remainingMonths > 0) {
-    tds = round(Math.max(0, (tdsInfo.projectedAnnualTax - tdsInfo.taxDeductedSoFar) / tdsInfo.remainingMonths));
+  if (effectiveProjectedTax > 0 && tdsInfo && tdsInfo.remainingMonths > 0) {
+    tds = round(Math.max(0, (effectiveProjectedTax - (tdsInfo.taxDeductedSoFar || 0)) / tdsInfo.remainingMonths));
   }
 
   if (epfEE > 0) deductions.push({ name: 'Employee PF (EPF)', amount: epfEE });
@@ -92,9 +109,9 @@ export function calculatePayroll({ employee, attendance, company, ptSlabs, tdsIn
   if (tds > 0) deductions.push({ name: 'TDS / Income Tax', amount: tds });
   if (advanceEmi > 0) deductions.push({ name: 'Salary Advance Recovery', amount: advanceEmi });
 
-  // Employer contributions (on actual pro-rated values)
-  const epfER = round(0.12 * Math.min(basicActual, 15000));
-  const esicER = grossActual <= 21000 ? round(0.0325 * grossActual) : 0;
+  // Employer contributions
+  const epfER = epfApplicable ? round(0.12 * Math.min(basicActual, 15000)) : 0;
+  const esicER = (esicApplicable && grossActual <= 21000) ? round(0.0325 * grossActual) : 0;
   if (epfER > 0) employerContrib.push({ name: 'Employer PF', amount: epfER });
   if (esicER > 0) employerContrib.push({ name: 'Employer ESIC', amount: esicER });
 

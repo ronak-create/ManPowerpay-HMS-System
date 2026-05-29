@@ -4,6 +4,7 @@ import ApiError from '../../utils/ApiError.js';
 import ApiResponse from '../../utils/ApiResponse.js';
 import asyncHandler from '../../utils/asyncHandler.js';
 import { logAudit } from '../../utils/auditLog.js';
+import { createNotification } from '../../utils/notify.js';
 
 // Helper: count working days in a date range (excludes Sundays & holidays)
 async function countWorkingDays(from, to) {
@@ -70,7 +71,10 @@ export const getLeaveBalance = asyncHandler(async (req, res) => {
 // POST /api/leaves — Employee applies for leave
 export const applyLeave = asyncHandler(async (req, res) => {
   const { leaveType, fromDate, toDate, reason } = req.body;
-  const emp = await prisma.employee.findUnique({ where: { userId: req.user.id } });
+  const emp = await prisma.employee.findUnique({
+    where: { userId: req.user.id },
+    include: { user: { select: { name: true } } }
+  });
   if (!emp) throw new ApiError(404, 'Employee record not found');
 
   const totalDays = await countWorkingDays(fromDate, toDate);
@@ -95,6 +99,15 @@ export const applyLeave = asyncHandler(async (req, res) => {
 
   const leave = await prisma.leaveRequest.create({
     data: { employeeId: emp.id, leaveType, fromDate: new Date(fromDate), toDate: new Date(toDate), totalDays, reason, status: 'pending' }
+  });
+
+  // Notify admins of new leave request
+  const admins = await prisma.user.findMany({ where: { role: 'admin', isActive: true }, select: { id: true } });
+  await createNotification(admins.map(a => a.id), {
+    title: 'New Leave Request',
+    message: `${emp.user?.name || 'An employee'} applied for ${leaveType} leave (${totalDays} day${totalDays > 1 ? 's' : ''})`,
+    type: 'leave_request',
+    entityId: leave.id
   });
 
   res.status(201).json(new ApiResponse(201, leave, 'Leave applied successfully'));
@@ -127,6 +140,14 @@ export const approveLeave = asyncHandler(async (req, res) => {
     data: { status: 'approved', approvedById: req.user.id, approvedAt: new Date(), remarks: req.body.remarks }
   });
 
+  const empUser = await prisma.employee.findUnique({ where: { id: leave.employeeId }, select: { userId: true } });
+  await createNotification(empUser.userId, {
+    title: 'Leave Approved ✅',
+    message: `Your ${leave.leaveType} leave (${leave.totalDays} days) has been approved.`,
+    type: 'leave_approved',
+    entityId: leave.id
+  });
+
   await logAudit({ userId: req.user.id, action: 'APPROVE_LEAVE', entity: 'leave_requests', entityId: req.params.id });
   res.json(new ApiResponse(200, null, 'Leave approved'));
 });
@@ -141,6 +162,15 @@ export const rejectLeave = asyncHandler(async (req, res) => {
     where: { id: req.params.id },
     data: { status: 'rejected', approvedById: req.user.id, approvedAt: new Date(), remarks: req.body.remarks }
   });
+
+  const empUser = await prisma.employee.findUnique({ where: { id: leave.employeeId }, select: { userId: true } });
+  await createNotification(empUser.userId, {
+    title: 'Leave Rejected',
+    message: `Your ${leave.leaveType} leave request has been rejected.${req.body.remarks ? ' Reason: ' + req.body.remarks : ''}`,
+    type: 'leave_rejected',
+    entityId: leave.id
+  });
+
   res.json(new ApiResponse(200, null, 'Leave rejected'));
 });
 

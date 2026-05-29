@@ -210,7 +210,7 @@ export const headcountReport = asyncHandler(async (req, res) => {
 
 // ── SALARY ADVANCE LEDGER ─────────────────────────────────────────────────────
 export const advanceLedger = asyncHandler(async (req, res) => {
-  const { outstandingOnly = 'false' } = req.query;
+  const { outstandingOnly = 'false', format: fmt = 'json' } = req.query;
   const where = {};
   if (outstandingOnly === 'true') where.status = 'active';
 
@@ -219,6 +219,42 @@ export const advanceLedger = asyncHandler(async (req, res) => {
     include: { employee: { include: { user: { select: { name: true } } } } },
     orderBy: { createdAt: 'desc' }
   });
+
+  if (fmt === 'excel') {
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Advance Ledger');
+    sheet.columns = [
+      { header: 'Emp Code', key: 'empCode', width: 15 },
+      { header: 'Employee Name', key: 'name', width: 25 },
+      { header: 'Sanctioned Amount', key: 'sanctioned', width: 20 },
+      { header: 'EMI', key: 'emi', width: 15 },
+      { header: 'Balance Remaining', key: 'balance', width: 20 },
+      { header: 'Status', key: 'status', width: 12 },
+      { header: 'Start Month', key: 'start', width: 15 },
+      { header: 'Reason', key: 'reason', width: 30 },
+    ];
+    sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E79' } };
+
+    loans.forEach(l => {
+      sheet.addRow({
+        empCode: l.employee.empCode,
+        name: l.employee.user?.name || '',
+        sanctioned: l.sanctionedAmount,
+        emi: l.emi,
+        balance: l.balanceRemaining,
+        status: l.status,
+        start: `${l.startMonth}/${l.startYear}`,
+        reason: l.reason || ''
+      });
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=Advance_Ledger.xlsx');
+    return res.send(Buffer.from(buffer));
+  }
+
   res.json(new ApiResponse(200, loans));
 });
 

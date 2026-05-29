@@ -87,6 +87,7 @@ model User {
   // Relations
   employee       Employee?
   auditLogs      AuditLog[]
+  notifications  Notification[]
 
   @@map("users")
 }
@@ -234,6 +235,12 @@ model Employee {
   // CTC
   annualCTC          Float           @default(0)
 
+  // Statutory overrides (null = use company/template default)
+  epfApplicable      Boolean?   // null = follow template, true/false = override
+  esicApplicable     Boolean?
+  ptApplicable       Boolean?
+  tdsProjectedTax    Float?     // Annual projected tax for TDS calculation (0 = exempt)
+
   // Documents
   documents          EmployeeDocument[]
   form16             Form16[]
@@ -257,7 +264,7 @@ model Employee {
 model EmployeeDocument {
   id          String   @id @default(cuid())
   employeeId  String
-  type        String   // aadhaar | pan | bank_passbook | offer_letter | other | appointment_letter
+  type        String   // aadhaar | pan | bank_passbook | offer_letter | other | appointment_letter | relieving_letter
   filePath    String
   uploadedAt  DateTime @default(now())
 
@@ -447,4 +454,21 @@ model OtpToken {
   createdAt DateTime @default(now())
 
   @@map("otp_tokens")
+}
+
+// ─── NOTIFICATIONS ────────────────────────────────────────────────────────────
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String   // leave_request | leave_approved | leave_rejected | payroll_locked | payslip_ready | advance_created
+  entityId  String?  // related record id (e.g. leaveRequestId, payrollRunId)
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
 }

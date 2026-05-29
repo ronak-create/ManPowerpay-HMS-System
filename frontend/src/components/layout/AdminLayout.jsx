@@ -3,10 +3,11 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Calendar, Settings, FileText,
   DollarSign, BarChart2, ClipboardList, LogOut, ChevronRight,
-  Bell, Menu, Briefcase
+  Menu, Briefcase
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import MobileSidebar from './MobileSidebar';
+import NotificationBell from './NotificationBell';
 
 const navGroups = [
   {
@@ -149,9 +150,7 @@ export default function AdminLayout() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button className="btn-icon text-gray-400 hover:text-gray-600 hover:bg-gray-100">
-              <Bell size={18} />
-            </button>
+            <NotificationBell />
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
               {user?.name?.[0]?.toUpperCase()}
             </div>

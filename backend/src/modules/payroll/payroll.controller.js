@@ -6,6 +6,7 @@ import asyncHandler from '../../utils/asyncHandler.js';
 import { calculatePayroll } from './payroll.engine.js';
 import { logAudit } from '../../utils/auditLog.js';
 import { generateForm16ForEmployee } from '../payslips/form16.controller.js';
+import { notifyAllEmployees } from '../../utils/notify.js';
 
 // GET /api/payroll — list all payroll runs
 export const listPayrollRuns = asyncHandler(async (req, res) => {
@@ -91,7 +92,11 @@ export const createPayrollRun = asyncHandler(async (req, res) => {
       attendance: { workingDays, daysWorked, otHours, lwpDays },
       company,
       ptSlabs: company.ptSlabs,
-      tdsInfo: { projectedAnnualTax: 0, taxDeductedSoFar, remainingMonths }, // Admin sets projectedAnnualTax separately
+      tdsInfo: {
+        projectedAnnualTax: emp.tdsProjectedTax ?? 0,
+        taxDeductedSoFar,
+        remainingMonths
+      },
       advanceEmi: activeAdvance?.emi || 0
     });
 
@@ -179,10 +184,18 @@ export const lockPayroll = asyncHandler(async (req, res) => {
     await tx.payrollRun.update({ where: { id: run.id }, data: { status: 'locked', lockedAt: new Date() } });
   });
 
+  // Notify all employees their payslip is ready
+  await notifyAllEmployees({
+    title: 'Payslip Ready 💰',
+    message: `Your payslip for ${['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][run.month]} ${run.year} is now available.`,
+    type: 'payslip_ready',
+    entityId: run.id
+  });
+
   // If locking month is March (month === 3), trigger Form 16 generation for all employees
   if (run.month === 3) {
     // Fire-and-forget: generate Form 16 for the financial year
-    generateAllForm16ForYear(run.year).catch(console.error);
+    generateAllForm16ForYear(run.year).catch(err => console.error('Form16 batch error:', err));
   }
 
   await logAudit({ userId: req.user.id, action: 'LOCK_PAYROLL', entity: 'payroll_runs', entityId: req.params.runId });

@@ -18,12 +18,6 @@ export default function AuditLogs() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
 
-  // calendar limits
-  const [minDate, setMinDate] =
-    useState('');
-  const [maxDate, setMaxDate] =
-    useState('');
-
   useEffect(() => {
     fetchLogs();
   }, [page, from, to]);
@@ -49,22 +43,6 @@ export default function AuditLogs() {
       setLogs(data.logs);
       setTotal(data.total);
       setTotalPages(data.totalPages);
-
-      setMinDate(
-        data.minDate
-          ? new Date(data.minDate)
-              .toISOString()
-              .split('T')[0]
-          : ''
-      );
-
-      setMaxDate(
-        data.maxDate
-          ? new Date(data.maxDate)
-              .toISOString()
-              .split('T')[0]
-          : ''
-      );
     } catch {
       toast.error('Failed to load logs');
     } finally {
@@ -96,8 +74,6 @@ export default function AuditLogs() {
           <input
             type="date"
             value={from}
-            min={minDate}
-            max={maxDate}
             onChange={(e) => {
               setPage(1);
               setFrom(e.target.value);
@@ -114,8 +90,6 @@ export default function AuditLogs() {
           <input
             type="date"
             value={to}
-            min={minDate}
-            max={maxDate}
             onChange={(e) => {
               setPage(1);
               setTo(e.target.value);

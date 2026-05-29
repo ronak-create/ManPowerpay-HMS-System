@@ -17,6 +17,7 @@ import statutoryRoutes from './modules/statutory/statutory.routes.js';
 import reportRoutes from './modules/reports/report.routes.js';
 import form16Routes from './modules/payslips/form16.routes.js';
 import salaryTemplateRoutes from './modules/payroll/salaryTemplate.routes.js';
+import notificationRoutes from './modules/notifications/notification.routes.js';
 
 dotenv.config();
 
@@ -56,6 +57,7 @@ app.use('/api/form16', form16Routes);
 app.use('/api/statutory', statutoryRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/salary-templates', salaryTemplateRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.use(errorHandler);
 

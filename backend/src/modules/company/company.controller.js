@@ -4,6 +4,7 @@ import ApiError from '../../utils/ApiError.js';
 import ApiResponse from '../../utils/ApiResponse.js';
 import asyncHandler from '../../utils/asyncHandler.js';
 import { logAudit } from '../../utils/auditLog.js';
+import { createNotification } from '../../utils/notify.js';
 
 // GET /api/company
 export const getCompany = asyncHandler(async (req, res) => {
@@ -88,6 +89,17 @@ export const createAdvanceLoan = asyncHandler(async (req, res) => {
   const loan = await prisma.advanceLoan.create({
     data: { employeeId, sanctionedAmount: Number(sanctionedAmount), emi: Number(emi), startMonth: Number(startMonth), startYear: Number(startYear), balanceRemaining: Number(sanctionedAmount), reason }
   });
+
+  const empUser = await prisma.employee.findUnique({ where: { id: employeeId }, select: { userId: true } });
+  if (empUser) {
+    await createNotification(empUser.userId, {
+      title: 'Salary Advance Sanctioned',
+      message: `A salary advance of ₹${Number(sanctionedAmount).toLocaleString('en-IN')} has been sanctioned. EMI: ₹${Number(emi).toLocaleString('en-IN')}/month.`,
+      type: 'advance_created',
+      entityId: loan.id
+    });
+  }
+
   await logAudit({ userId: req.user.id, action: 'CREATE', entity: 'advance_loans', entityId: loan.id, newValue: req.body });
   res.status(201).json(new ApiResponse(201, loan, 'Advance loan created'));
 });
