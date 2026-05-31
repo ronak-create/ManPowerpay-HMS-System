@@ -1,60 +1,60 @@
 import {
-  HelpCircle,
-  Lock,
+  Shield,
+  User,
   Users,
-  ShieldCheck,
+  CalendarDays,
   Briefcase,
-  IndianRupee,
   Layers,
+  IndianRupee,
   FileCheck,
-  FileText,
-  ClipboardList,
-  UserCircle,
-  Building2,
   ScrollText,
-  CircleHelp,
-  Wrench,
+  FileText,
   BadgeCheck,
-  BookOpen
+  Building2,
+  Wrench,
+  CircleHelp,
+  BookOpen,
+  UserCircle
 } from 'lucide-react';
 
-// Sections
-import Introduction from './documentation/sections/Introduction';
-import AccessSecurity from './documentation/sections/AccessSecurity';
-import EmployeeManagement from './documentation/sections/EmployeeManagement';
-import AttendanceManagement from './documentation/sections/AttendanceManagement';
-import LeaveManagement from './documentation/sections/LeaveManagement';
-import PayrollProcessing from './documentation/sections/PayrollProcessing';
-import SalaryTemplates from './documentation/sections/SalaryTemplates';
-import StatutoryCompliance from './documentation/sections/StatutoryCompliance';
-import AppointmentLetters from './documentation/sections/AppointmentLetters';
+// Shared
+import Introduction from './documentation/Introduction';
+import AccessSecurity from './documentation/AccessSecurity';
+
+// Admin
+import EmployeeManagement from './documentation/admin/EmployeeManagement';
+import AttendanceManagement from './documentation/admin/AttendanceManagement';
+import LeaveManagement from './documentation/admin/LeaveManagement';
+import SalaryTemplates from './documentation/admin/SalaryTemplates';
+import PayrollProcessing from './documentation/admin/PayrollProcessing';
+import StatutoryCompliance from './documentation/admin/StatutoryCompliance';
+import AppointmentLetters from './documentation/admin/AppointmentLetters';
+import ReportsMIS from './documentation/admin/ReportsMIS';
+import AuditLogs from './documentation/admin/AuditLogs';
+import CompanySettings from './documentation/admin/CompanySettings';
+import BestPractices from './documentation/admin/BestPractices';
+import TroubleshootingAdmin from './documentation/admin/Troubleshooting';
+
+// Employee
 import EmployeePortal from './documentation/sections/EmployeePortal';
 import ResignationExit from './documentation/sections/ResignationExit';
-import ReportsMIS from './documentation/sections/ReportsMIS';
-import AuditLogs from './documentation/sections/AuditLogs';
-import CompanySettings from './documentation/sections/CompanySettings';
 import FAQ from './documentation/sections/FAQ';
-import Troubleshooting from './documentation/sections/Troubleshooting';
-import BestPractices from './documentation/sections/BestPractices';
 import Glossary from './documentation/sections/Glossary';
-
-export const docsSections = [
+export const adminDocsSections = [
   {
     id: 'introduction',
     title: 'Introduction',
     category: 'Getting Started',
-    icon: HelpCircle,
+    icon: Shield,
     component: Introduction
   },
-
   {
     id: 'access-security',
     title: 'Access & Security',
     category: 'Getting Started',
-    icon: Lock,
+    icon: Shield,
     component: AccessSecurity
   },
-
   {
     id: 'employee-management',
     title: 'Employee Management',
@@ -62,23 +62,20 @@ export const docsSections = [
     icon: Users,
     component: EmployeeManagement
   },
-
   {
-    id: 'attendance-management',
-    title: 'Attendance Register',
+    id: 'attendance',
+    title: 'Attendance',
     category: 'HR Operations',
-    icon: ShieldCheck,
+    icon: CalendarDays,
     component: AttendanceManagement
   },
-
   {
-    id: 'leave-management',
+    id: 'leave',
     title: 'Leave Management',
     category: 'HR Operations',
     icon: Briefcase,
     component: LeaveManagement
   },
-
   {
     id: 'salary-templates',
     title: 'Salary Templates',
@@ -86,23 +83,20 @@ export const docsSections = [
     icon: Layers,
     component: SalaryTemplates
   },
-
   {
-    id: 'payroll-processing',
-    title: 'Payroll Processing',
+    id: 'payroll',
+    title: 'Payroll',
     category: 'Payroll',
     icon: IndianRupee,
     component: PayrollProcessing
   },
-
   {
-    id: 'statutory-compliance',
-    title: 'Statutory Compliance',
+    id: 'compliance',
+    title: 'Compliance',
     category: 'Payroll',
     icon: FileCheck,
     component: StatutoryCompliance
   },
-
   {
     id: 'appointment-letters',
     title: 'Appointment Letters',
@@ -110,31 +104,13 @@ export const docsSections = [
     icon: ScrollText,
     component: AppointmentLetters
   },
-
   {
-    id: 'employee-portal',
-    title: 'Employee Portal',
-    category: 'Employee Self Service',
-    icon: UserCircle,
-    component: EmployeePortal
-  },
-
-  {
-    id: 'resignation-exit',
-    title: 'Resignation & Exit',
-    category: 'HR Operations',
-    icon: ClipboardList,
-    component: ResignationExit
-  },
-
-  {
-    id: 'reports-mis',
+    id: 'reports',
     title: 'Reports & MIS',
     category: 'Analytics',
     icon: FileText,
     component: ReportsMIS
   },
-
   {
     id: 'audit-logs',
     title: 'Audit Logs',
@@ -142,7 +118,6 @@ export const docsSections = [
     icon: BadgeCheck,
     component: AuditLogs
   },
-
   {
     id: 'company-settings',
     title: 'Company Settings',
@@ -150,7 +125,51 @@ export const docsSections = [
     icon: Building2,
     component: CompanySettings
   },
+  {
+    id: 'troubleshooting',
+    title: 'Troubleshooting',
+    category: 'Support',
+    icon: Wrench,
+    component: TroubleshootingAdmin
+  },
+  {
+    id: 'best-practices',
+    title: 'Best Practices',
+    category: 'Support',
+    icon: BookOpen,
+    component: BestPractices
+  }
+];
 
+export const employeeDocsSections = [
+  {
+    id: 'introduction',
+    title: 'Introduction',
+    category: 'Getting Started',
+    icon: User,
+    component: Introduction
+  },
+  {
+    id: 'access-security',
+    title: 'Access & Security',
+    category: 'Getting Started',
+    icon: Shield,
+    component: AccessSecurity
+  },
+  {
+    id: 'employee-portal',
+    title: 'Employee Portal',
+    category: 'My Account',
+    icon: UserCircle,
+    component: EmployeePortal
+  },
+  {
+    id: 'resignation',
+    title: 'Resignation',
+    category: 'Employment',
+    icon: Briefcase,
+    component: ResignationExit
+  },
   {
     id: 'faq',
     title: 'FAQ',
@@ -158,23 +177,13 @@ export const docsSections = [
     icon: CircleHelp,
     component: FAQ
   },
-
-  {
-    id: 'troubleshooting',
-    title: 'Troubleshooting',
-    category: 'Support',
-    icon: Wrench,
-    component: Troubleshooting
-  },
-
-  {
-    id: 'best-practices',
-    title: 'Best Practices',
-    category: 'Support',
-    icon: BadgeCheck,
-    component: BestPractices
-  },
-
+//   {
+//     id: 'troubleshooting',
+//     title: 'Troubleshooting',
+//     category: 'Support',
+//     icon: Wrench,
+//     component: TroubleshootingEmployee
+//   },
   {
     id: 'glossary',
     title: 'Glossary',
