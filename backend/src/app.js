@@ -91,7 +91,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // AFTER
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(join(__dirname, "../../frontend/dist")));
-  app.get("*", (req, res) => {
+  app.get("/{*splat}", (req, res) => {
     res.sendFile(join(__dirname, "../../frontend/dist/index.html"));
   });
 }
