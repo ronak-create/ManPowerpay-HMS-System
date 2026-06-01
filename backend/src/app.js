@@ -5,6 +5,9 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
 import compression from 'compression';
+import { createRequire } from 'module';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import { errorHandler } from './middleware/errorHandler.js';
 import { trimMiddleware } from './middleware/trim.js';
 
@@ -75,6 +78,18 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/salary-templates', salaryTemplateRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/resignations', resignationRoutes);
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// Serve frontend in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(join(__dirname, '../../frontend/dist')));
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api')) {
+      res.sendFile(join(__dirname, '../../frontend/dist/index.html'));
+    }
+  });
+}
 
 app.use(errorHandler);
 
