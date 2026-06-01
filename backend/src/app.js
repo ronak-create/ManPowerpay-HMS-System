@@ -81,10 +81,10 @@ app.use('/api/resignations', resignationRoutes);
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Serve frontend in production
+// AFTER
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(join(__dirname, '../../frontend/dist')));
-  app.get('*', (req, res) => {
+  app.get('/{*path}', (req, res) => {
     if (!req.path.startsWith('/api')) {
       res.sendFile(join(__dirname, '../../frontend/dist/index.html'));
     }
