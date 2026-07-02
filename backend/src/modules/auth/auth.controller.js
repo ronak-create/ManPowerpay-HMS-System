@@ -33,7 +33,7 @@ export const login = asyncHandler(async (req, res) => {
 
   await prisma.user.update({ where: { id: user.id }, data: { failedAttempts: 0, lockedUntil: null, lastLogin: new Date() } });
 
-  const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
+  const token = jwt.sign({ id: user.id, role: user.role, companyId: user.companyId }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
 
   await logAudit({ userId: user.id, action: 'LOGIN', entity: 'users', entityId: user.id });
 
@@ -41,6 +41,71 @@ export const login = asyncHandler(async (req, res) => {
     token,
     user: { id: user.id, name: user.name, email: user.email, role: user.role, passwordResetRequired: user.passwordResetRequired }
   }, 'Login successful'));
+});
+
+// POST /api/auth/register — self-serve company signup (public, runs untenanted)
+export const register = asyncHandler(async (req, res) => {
+  const { companyName, registeredAddress, adminName, adminEmail, adminMobile, password } = req.body;
+
+  const existing = await prisma.user.findFirst({
+    where: { OR: [{ email: adminEmail.toLowerCase() }, { mobile: adminMobile }] }
+  });
+  if (existing) throw new ApiError(400, 'An account with this email or mobile already exists');
+
+  const hash = await bcrypt.hash(password, 12);
+
+  const { company, admin } = await prisma.$transaction(async (tx) => {
+    const company = await tx.company.create({
+      data: { name: companyName, registeredAddress: registeredAddress || companyName },
+    });
+    const admin = await tx.user.create({
+      data: {
+        companyId: company.id,
+        name: adminName,
+        email: adminEmail.toLowerCase(),
+        mobile: adminMobile,
+        passwordHash: hash,
+        role: 'admin',
+      },
+    });
+    // Sensible defaults so the tenant can run payroll immediately.
+    await tx.site.create({ data: { companyId: company.id, name: 'Head Office' } });
+    await tx.department.create({ data: { companyId: company.id, name: 'General' } });
+    await tx.ptSlab.createMany({
+      data: [
+        { companyId: company.id, state: 'Gujarat', minSalary: 0, maxSalary: 5999, ptAmount: 0 },
+        { companyId: company.id, state: 'Gujarat', minSalary: 6000, maxSalary: 8999, ptAmount: 80 },
+        { companyId: company.id, state: 'Gujarat', minSalary: 9000, maxSalary: 11999, ptAmount: 150 },
+        { companyId: company.id, state: 'Gujarat', minSalary: 12000, maxSalary: null, ptAmount: 200 },
+      ],
+    });
+    await tx.salaryTemplate.create({
+      data: {
+        companyId: company.id,
+        name: 'Standard Template',
+        components: {
+          create: [
+            { name: 'Basic', type: 'earning', basis: 'percent_of_gross', value: 50, sequence: 1, isEpfApplicable: true, isEsicApplicable: true },
+            { name: 'HRA', type: 'earning', basis: 'percent_of_basic', value: 40, sequence: 2 },
+            { name: 'Travel Allowance', type: 'earning', basis: 'fixed', value: 1600, sequence: 3 },
+            { name: 'Special Allowance', type: 'earning', basis: 'fixed', value: 0, sequence: 4 },
+          ],
+        },
+      },
+    });
+    // Attach the free plan if one is configured.
+    const freePlan = await tx.plan.findUnique({ where: { code: 'free' } });
+    if (freePlan) {
+      await tx.subscription.create({ data: { companyId: company.id, planId: freePlan.id, status: 'active' } });
+    }
+    return { company, admin };
+  });
+
+  const token = jwt.sign({ id: admin.id, role: admin.role, companyId: company.id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
+  res.status(201).json(new ApiResponse(201, {
+    token,
+    user: { id: admin.id, name: admin.name, email: admin.email, role: admin.role, passwordResetRequired: false },
+  }, 'Company registered'));
 });
 
 // POST /api/auth/forgot-password

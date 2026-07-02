@@ -17,21 +17,17 @@ async function main() {
     throw new Error('SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD must be set to seed the admin user.');
   }
 
-  // Create Admin user
-  const hash = await bcrypt.hash(adminPassword, 12);
-  const adminUser = await prisma.user.upsert({
-    where: { email: adminEmail.toLowerCase() },
-    update: {},
-    create: {
-      name: 'System Admin',
-      email: adminEmail.toLowerCase(),
-      mobile: adminMobile,
-      passwordHash: hash,
-      role: 'admin',
-    }
-  });
+  // Billing plans (global)
+  const plans = [
+    { code: 'free', name: 'Free', priceMonthly: 0, employeeLimit: 10, features: { bulkExport: false, watermarkedPayslips: true } },
+    { code: 'starter', name: 'Starter', priceMonthly: 999, employeeLimit: 50, features: { bulkExport: true, watermarkedPayslips: false } },
+    { code: 'growth', name: 'Growth', priceMonthly: 2999, employeeLimit: 500, features: { bulkExport: true, watermarkedPayslips: false } },
+  ];
+  for (const p of plans) {
+    await prisma.plan.upsert({ where: { code: p.code }, update: { name: p.name, priceMonthly: p.priceMonthly, employeeLimit: p.employeeLimit, features: p.features }, create: p });
+  }
 
-  // Create Company
+  // Create Company (before the admin user, which now carries companyId)
   const company = await prisma.company.upsert({
     where: { id: 'company_default' },
     update: {},
@@ -43,6 +39,21 @@ async function main() {
       workingDaysBase: 26,
       otMultiplier: 2.0,
       financialYearStart: 4,
+    }
+  });
+
+  // Create Admin user
+  const hash = await bcrypt.hash(adminPassword, 12);
+  const adminUser = await prisma.user.upsert({
+    where: { email: adminEmail.toLowerCase() },
+    update: {},
+    create: {
+      companyId: company.id,
+      name: 'System Admin',
+      email: adminEmail.toLowerCase(),
+      mobile: adminMobile,
+      passwordHash: hash,
+      role: 'admin',
     }
   });
 

@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import ApiError from '../utils/ApiError.js';
 import prisma from '../config/db.js';
+import { runWithTenant } from '../lib/tenantContext.js';
 
 export const verifyJWT = async (req, res, next) => {
   try {
@@ -34,7 +35,9 @@ export const verifyJWT = async (req, res, next) => {
     }
 
     req.user = user;
-    next();
+    // Bind the tenant for the rest of the request so all Prisma queries are
+    // automatically scoped to this user's company.
+    return runWithTenant({ companyId: user.companyId }, () => next());
   } catch (error) {
     if (error instanceof ApiError) return next(error);
     next(new ApiError(401, 'Invalid or expired token'));

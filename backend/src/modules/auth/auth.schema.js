@@ -3,6 +3,15 @@ import { isStrongPassword, PASSWORD_POLICY_MESSAGE } from '../../utils/password.
 
 const strongPassword = z.string().refine(isStrongPassword, { message: PASSWORD_POLICY_MESSAGE });
 
+export const registerSchema = z.object({
+  companyName: z.string().min(2, 'Company name is required'),
+  registeredAddress: z.string().optional(),
+  adminName: z.string().min(2, 'Your name is required'),
+  adminEmail: z.string().email().transform((v) => v.toLowerCase()),
+  adminMobile: z.string().regex(/^\d{10}$/, 'Mobile must be 10 digits'),
+  password: strongPassword,
+});
+
 export const loginSchema = z.object({
   email: z.string().email().transform((v) => v.toLowerCase()),
   password: z.string().min(1, 'Password is required'),
