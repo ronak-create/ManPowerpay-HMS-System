@@ -20,13 +20,7 @@ export default function PayrollRun() {
   };
 
   const startPayroll = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      toast.error('Session expired. Please log in again.');
-      navigate('/login');
-      return;
-    }
-
+    // Auth/session handling (401 → redirect) is centralized in the axios interceptor.
     const month = new Date().getMonth() + 1;
     const year = new Date().getFullYear();
     setLoading(true);
