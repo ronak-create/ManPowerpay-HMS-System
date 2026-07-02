@@ -39,7 +39,7 @@ export const login = asyncHandler(async (req, res) => {
 
   res.json(new ApiResponse(200, {
     token,
-    user: { id: user.id, name: user.name, email: user.email, role: user.role }
+    user: { id: user.id, name: user.name, email: user.email, role: user.role, passwordResetRequired: user.passwordResetRequired }
   }, 'Login successful'));
 });
 
@@ -63,17 +63,29 @@ export const forgotPassword = asyncHandler(async (req, res) => {
 export const resetPassword = asyncHandler(async (req, res) => {
   const { email, otp, newPassword } = req.body;
 
+  // Look up the latest live OTP for this email so we can count attempts even when
+  // the submitted code is wrong (defense-in-depth alongside the endpoint rate limit).
   const record = await prisma.otpToken.findFirst({
-    where: { email, otp, used: false, expiresAt: { gt: new Date() } },
+    where: { email, used: false, expiresAt: { gt: new Date() } },
     orderBy: { createdAt: 'desc' }
   });
   if (!record) throw new ApiError(400, 'Invalid or expired OTP');
 
+  const MAX_OTP_ATTEMPTS = 5;
+  if (record.attempts >= MAX_OTP_ATTEMPTS) {
+    await prisma.otpToken.update({ where: { id: record.id }, data: { used: true } });
+    throw new ApiError(429, 'Too many incorrect attempts. Please request a new OTP.');
+  }
+  if (record.otp !== otp) {
+    await prisma.otpToken.update({ where: { id: record.id }, data: { attempts: { increment: 1 } } });
+    throw new ApiError(400, 'Invalid or expired OTP');
+  }
+
   const hash = await bcrypt.hash(newPassword, 12);
-  // Reset the password and clear any lockout from prior failed logins.
+  // Reset the password, clear any lockout, and clear the forced-reset flag.
   await prisma.user.update({
     where: { email },
-    data: { passwordHash: hash, failedAttempts: 0, lockedUntil: null }
+    data: { passwordHash: hash, failedAttempts: 0, lockedUntil: null, passwordResetRequired: false }
   });
   await prisma.otpToken.update({ where: { id: record.id }, data: { used: true } });
 
@@ -87,7 +99,7 @@ export const getMe = asyncHandler(async (req, res) => {
   if (user.role === 'employee') {
     extra.employee = await prisma.employee.findUnique({ where: { userId: user.id }, include: { site: true, department: true } });
   }
-  res.json(new ApiResponse(200, { id: user.id, name: user.name, email: user.email, role: user.role, ...extra }));
+  res.json(new ApiResponse(200, { id: user.id, name: user.name, email: user.email, role: user.role, passwordResetRequired: user.passwordResetRequired, ...extra }));
 });
 
 // POST /api/auth/change-password
@@ -99,6 +111,6 @@ export const changePassword = asyncHandler(async (req, res) => {
   if (!match) throw new ApiError(400, 'Current password is incorrect');
 
   const hash = await bcrypt.hash(newPassword, 12);
-  await prisma.user.update({ where: { id: user.id }, data: { passwordHash: hash } });
+  await prisma.user.update({ where: { id: user.id }, data: { passwordHash: hash, passwordResetRequired: false } });
   res.json(new ApiResponse(200, null, 'Password changed successfully'));
 });

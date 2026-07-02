@@ -7,6 +7,7 @@ import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { logAudit } from "../../utils/auditLog.js";
+import { generateTempPassword } from "../../utils/password.js";
 import { generateAppointmentLetterPDF } from "../../utils/appointmentLetterGenerator.js";
 import { generateRelievingLetterPDF } from "../../utils/relievingLetterGenerator.js";
 
@@ -181,8 +182,7 @@ export const finalizeBulkUpload = asyncHandler(async (req, res) => {
   const { employees } = req.body;
   if (!employees || !Array.isArray(employees)) throw new ApiError(400, "Invalid data");
 
-  const results = { created: 0, failed: [] };
-  const hash = await bcrypt.hash("Welcome@1234", 12);
+  const results = { created: 0, failed: [], credentials: [] };
   const company = await prisma.company.findFirst();
   if (!company) throw new ApiError(404, "Company not configured");
 
@@ -253,6 +253,10 @@ export const finalizeBulkUpload = asyncHandler(async (req, res) => {
         }
       }
 
+      // Unique temp password per employee, must be changed on first login.
+      const tempPassword = generateTempPassword();
+      const hash = await bcrypt.hash(tempPassword, 12);
+
       await prisma.$transaction(async (tx) => {
         const user = await tx.user.create({
           data: {
@@ -261,6 +265,7 @@ export const finalizeBulkUpload = asyncHandler(async (req, res) => {
             mobile: r.mobile,
             passwordHash: hash,
             role: "employee",
+            passwordResetRequired: true,
           },
         });
         await tx.employee.create({
@@ -294,6 +299,7 @@ export const finalizeBulkUpload = asyncHandler(async (req, res) => {
         });
       });
       results.created++;
+      results.credentials.push({ empCode: r.empCode, email: r.email.toLowerCase(), tempPassword });
     } catch (err) {
       results.failed.push({ empCode: r.empCode, reason: err.message });
     }
@@ -399,7 +405,11 @@ export const createEmployee = asyncHandler(async (req, res) => {
   if (existing) throw new ApiError(400, "Email or mobile already registered");
   const empExisting = await prisma.employee.findUnique({ where: { empCode } });
   if (empExisting) throw new ApiError(400, "Employee code already exists");
-  const hash = await bcrypt.hash(password || "Welcome@1234", 12);
+  // Use the provided password, otherwise generate a random temp one the employee
+  // must change on first login (no shared default password).
+  const usingTempPassword = !password;
+  const tempPassword = usingTempPassword ? generateTempPassword() : null;
+  const hash = await bcrypt.hash(password || tempPassword, 12);
   const result = await prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
       data: {
@@ -408,6 +418,7 @@ export const createEmployee = asyncHandler(async (req, res) => {
         mobile,
         passwordHash: hash,
         role: "employee",
+        passwordResetRequired: usingTempPassword,
       },
     });
     const emp = await tx.employee.create({
@@ -441,16 +452,18 @@ export const createEmployee = asyncHandler(async (req, res) => {
     });
     return { user, emp };
   });
+  // Never persist the plaintext password in the audit log.
+  const { password: _pw, ...auditBody } = req.body;
   await logAudit({
     userId: req.user.id,
     action: "CREATE",
     entity: "employees",
     entityId: result.emp.id,
-    newValue: req.body,
+    newValue: auditBody,
   });
   res
     .status(201)
-    .json(new ApiResponse(201, result, "Employee created successfully"));
+    .json(new ApiResponse(201, { ...result, tempPassword }, "Employee created successfully"));
 });
 
 // PUT /api/employees/:id

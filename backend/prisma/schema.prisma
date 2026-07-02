@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ─── ENUMS ────────────────────────────────────────────────────────────────────
@@ -88,6 +89,7 @@ model User {
   lockedUntil    DateTime?
   resetToken     String?
   resetTokenExp  DateTime?
+  passwordResetRequired Boolean @default(false) // force a password change on next login
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
@@ -137,6 +139,7 @@ model Holiday {
 
   company     Company  @relation(fields: [companyId], references: [id])
 
+  @@index([date])
   @@map("holidays")
 }
 
@@ -267,6 +270,8 @@ model Employee {
   leaveBalance       LeaveBalance[]
   resignations       Resignation[]
 
+  @@index([departmentId])
+  @@index([siteId])
   @@map("employees")
 }
 
@@ -317,6 +322,7 @@ model Attendance {
   employee         Employee         @relation(fields: [employeeId], references: [id])
 
   @@unique([employeeId, date])
+  @@index([date])
   @@map("attendance")
 }
 
@@ -354,6 +360,8 @@ model LeaveRequest {
 
   employee     Employee    @relation(fields: [employeeId], references: [id])
 
+  @@index([employeeId])
+  @@index([status])
   @@map("leave_requests")
 }
 
@@ -411,6 +419,7 @@ model Payslip {
   payrollRun    PayrollRun @relation(fields: [payrollRunId], references: [id])
 
   @@unique([employeeId, payrollRunId])
+  @@index([payrollRunId])
   @@map("payslips")
 }
 
@@ -449,6 +458,8 @@ model AuditLog {
 
   user      User     @relation(fields: [userId], references: [id])
 
+  @@index([userId])
+  @@index([createdAt])
   @@map("audit_logs")
 }
 
@@ -460,8 +471,10 @@ model OtpToken {
   otp       String
   expiresAt DateTime
   used      Boolean  @default(false)
+  attempts  Int      @default(0) // failed verification attempts against this token
   createdAt DateTime @default(now())
 
+  @@index([email])
   @@map("otp_tokens")
 }
 
@@ -479,6 +492,7 @@ model Notification {
 
   user      User     @relation(fields: [userId], references: [id])
 
+  @@index([userId, isRead])
   @@map("notifications")
 }
 
