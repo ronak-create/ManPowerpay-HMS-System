@@ -35,7 +35,7 @@ export const login = asyncHandler(async (req, res) => {
 
   const token = jwt.sign({ id: user.id, role: user.role, companyId: user.companyId }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
 
-  await logAudit({ userId: user.id, action: 'LOGIN', entity: 'users', entityId: user.id });
+  await logAudit({ userId: user.id, action: 'LOGIN', entity: 'users', entityId: user.id, companyId: user.companyId });
 
   res.json(new ApiResponse(200, {
     token,
