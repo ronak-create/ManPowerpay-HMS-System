@@ -8,6 +8,7 @@ import useAuthStore from "./store/authStore";
 import LoginPage from "./pages/auth/LoginPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
+import ForcePasswordChange from "./pages/auth/ForcePasswordChange";
 
 // Admin
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -35,6 +36,8 @@ import Documentation from "./pages/shared/Documentation";
 const PrivateRoute = ({ children, role }) => {
   const { user, token } = useAuthStore();
   if (!token) return <Navigate to="/login" replace />;
+  // Force a password change before any app access when using a temp password.
+  if (user?.passwordResetRequired) return <Navigate to="/change-password" replace />;
   if (role && user?.role !== role)
     return <Navigate to="/unauthorized" replace />;
   return children;
@@ -71,6 +74,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/change-password" element={<ForcePasswordChange />} />
 
         <Route
           path="/admin"

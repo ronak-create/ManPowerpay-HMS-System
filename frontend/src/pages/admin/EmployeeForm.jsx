@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Save, ArrowLeft, Upload } from 'lucide-react';
+import { Save, ArrowLeft, Upload, Copy, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../api/axios';
+import Modal from '../../components/ui/Modal';
 
 export default function EmployeeForm() {
   const { id } = useParams();
@@ -13,6 +14,8 @@ export default function EmployeeForm() {
   const [meta, setMeta] = useState({ sites: [], departments: [], templates: [] });
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('basic');
+  const [newCreds, setNewCreds] = useState(null); // { email, tempPassword } shown after create
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetchMeta();
@@ -51,16 +54,31 @@ export default function EmployeeForm() {
       if (isEdit) {
         await api.put(`/employees/${id}`, data);
         toast.success('Employee updated');
+        navigate('/admin/employees');
       } else {
-        await api.post('/employees', data);
+        const res = await api.post('/employees', data);
         toast.success('Employee created');
+        const tempPassword = res.data?.data?.tempPassword;
+        if (tempPassword) {
+          // Show the one-time temp password so the admin can share it; the
+          // employee is forced to change it on first login.
+          setNewCreds({ email: data.email, tempPassword });
+        } else {
+          navigate('/admin/employees');
+        }
       }
-      navigate('/admin/employees');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Operation failed');
     } finally {
       setLoading(false);
     }
+  };
+
+  const copyCreds = async () => {
+    if (!newCreds) return;
+    await navigator.clipboard.writeText(`Email: ${newCreds.email}\nTemporary password: ${newCreds.tempPassword}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const tabs = [
@@ -248,6 +266,37 @@ export default function EmployeeForm() {
           )}
         </form>
       </div>
+
+      <Modal
+        open={!!newCreds}
+        onClose={() => { setNewCreds(null); navigate('/admin/employees'); }}
+        title="Employee created — share these credentials"
+        subtitle="Shown only once. The employee must change this password on first login."
+        footer={
+          <div className="flex justify-end gap-3">
+            <button onClick={copyCreds} className="flex items-center gap-2 px-4 py-2 rounded-lg border text-sm hover:bg-gray-50">
+              {copied ? <Check size={16} /> : <Copy size={16} />} {copied ? 'Copied' : 'Copy'}
+            </button>
+            <button
+              onClick={() => { setNewCreds(null); navigate('/admin/employees'); }}
+              className="bg-primary text-white px-5 py-2 rounded-lg text-sm hover:bg-primary-light"
+            >
+              Done
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-3">
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</p>
+            <p className="font-mono text-sm text-gray-800">{newCreds?.email}</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Temporary Password</p>
+            <p className="font-mono text-sm text-gray-800">{newCreds?.tempPassword}</p>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

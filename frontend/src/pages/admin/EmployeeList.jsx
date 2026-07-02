@@ -67,6 +67,18 @@ function BulkUploadModal({ open, onClose, onSuccess }) {
     }
   };
 
+  const downloadCredentials = () => {
+    if (!result?.credentials?.length) return;
+    const rows = [['Employee Code', 'Email', 'Temporary Password'].join(',')];
+    result.credentials.forEach(c => rows.push([c.empCode, c.email, c.tempPassword].join(',')));
+    const url = window.URL.createObjectURL(new Blob([rows.join('\n')], { type: 'text/csv' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'employee_credentials.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   const toggleRow = (id) => {
     setStaged(prev => prev.map(r => r.id === id ? { ...r, isSelected: !r.isSelected } : r));
   };
@@ -248,6 +260,22 @@ function BulkUploadModal({ open, onClose, onSuccess }) {
             </div>
             <h3 className="text-xl font-black text-gray-900">Import Complete</h3>
             <p className="text-gray-500 mt-2">Successfully created {result.created} employee records.</p>
+            {result.credentials?.length > 0 && (
+              <div className="mt-6 text-left max-w-md mx-auto">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-bold text-gray-700">Temporary passwords ({result.credentials.length})</p>
+                  <button onClick={downloadCredentials} className="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
+                    <Download size={14} /> Download CSV
+                  </button>
+                </div>
+                <p className="text-xs text-gray-400 mb-2">Shown only once. Share with employees — they must change it on first login.</p>
+                <div className="max-h-40 overflow-y-auto border rounded-xl p-3 text-xs bg-gray-50 font-mono">
+                  {result.credentials.map((c, i) => (
+                    <p key={i}>{c.empCode} — {c.email} — {c.tempPassword}</p>
+                  ))}
+                </div>
+              </div>
+            )}
             {result.failed.length > 0 && (
               <div className="mt-6 text-left max-w-md mx-auto">
                 <p className="text-sm font-bold text-red-600 mb-2">Errors in {result.failed.length} rows:</p>

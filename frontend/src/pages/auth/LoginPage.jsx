@@ -20,7 +20,11 @@ export default function LoginPage() {
       const { token, user } = res.data.data;
       login(user, token);
       toast.success(`Welcome, ${user.name}!`);
-      navigate({ admin: '/admin', employee: '/employee' }[user.role] || '/login');
+      if (user.passwordResetRequired) {
+        navigate('/change-password');
+      } else {
+        navigate({ admin: '/admin', employee: '/employee' }[user.role] || '/login');
+      }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Login failed');
     } finally { setLoading(false); }
