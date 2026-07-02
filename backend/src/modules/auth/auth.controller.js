@@ -62,17 +62,19 @@ export const forgotPassword = asyncHandler(async (req, res) => {
 // POST /api/auth/reset-password
 export const resetPassword = asyncHandler(async (req, res) => {
   const { email, otp, newPassword } = req.body;
-  if (!email || !otp || !newPassword) throw new ApiError(400, 'All fields required');
-  if (newPassword.length < 8) throw new ApiError(400, 'Password must be at least 8 characters');
 
   const record = await prisma.otpToken.findFirst({
-    where: { email: email.toLowerCase(), otp, used: false, expiresAt: { gt: new Date() } },
+    where: { email, otp, used: false, expiresAt: { gt: new Date() } },
     orderBy: { createdAt: 'desc' }
   });
   if (!record) throw new ApiError(400, 'Invalid or expired OTP');
 
   const hash = await bcrypt.hash(newPassword, 12);
-  await prisma.user.update({ where: { email: email.toLowerCase() }, data: { passwordHash: hash } });
+  // Reset the password and clear any lockout from prior failed logins.
+  await prisma.user.update({
+    where: { email },
+    data: { passwordHash: hash, failedAttempts: 0, lockedUntil: null }
+  });
   await prisma.otpToken.update({ where: { id: record.id }, data: { used: true } });
 
   res.json(new ApiResponse(200, null, 'Password reset successful'));
@@ -91,8 +93,6 @@ export const getMe = asyncHandler(async (req, res) => {
 // POST /api/auth/change-password
 export const changePassword = asyncHandler(async (req, res) => {
   const { currentPassword, newPassword } = req.body;
-  if (!currentPassword || !newPassword) throw new ApiError(400, 'Both fields required');
-  if (newPassword.length < 8) throw new ApiError(400, 'Password must be at least 8 characters');
 
   const user = await prisma.user.findUnique({ where: { id: req.user.id } });
   const match = await bcrypt.compare(currentPassword, user.passwordHash);

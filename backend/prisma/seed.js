@@ -1,20 +1,31 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('Seeding database...');
 
+  // Admin credentials come from the environment so no secret lives in the repo.
+  const adminEmail = process.env.SEED_ADMIN_EMAIL;
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+  const adminMobile = process.env.SEED_ADMIN_MOBILE || '9000000000';
+  if (!adminEmail || !adminPassword) {
+    throw new Error('SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD must be set to seed the admin user.');
+  }
+
   // Create Admin user
-  const hash = await bcrypt.hash('Admin@1234', 12);
+  const hash = await bcrypt.hash(adminPassword, 12);
   const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@manpowerpay.com' },
+    where: { email: adminEmail.toLowerCase() },
     update: {},
     create: {
       name: 'System Admin',
-      email: 'admin@manpowerpay.com',
-      mobile: '9000000000',
+      email: adminEmail.toLowerCase(),
+      mobile: adminMobile,
       passwordHash: hash,
       role: 'admin',
     }
@@ -78,7 +89,7 @@ async function main() {
     }
   });
 
-  console.log(`Admin created: admin@manpowerpay.com / Admin@1234`);
+  console.log(`Admin created: ${adminUser.email}`);
   console.log(`Company, default site, department and salary template created.`);
 }
 
