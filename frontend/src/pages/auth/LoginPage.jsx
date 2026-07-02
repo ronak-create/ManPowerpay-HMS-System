@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import api from '../../api/axios';
 import useAuthStore from '../../store/authStore';
 
@@ -137,6 +138,10 @@ export default function LoginPage() {
               }
             </button>
           </form>
+
+          <p className="text-sm text-gray-500 text-center mt-6">
+            New here? <Link to="/signup" className="text-primary font-semibold hover:underline">Create a company account</Link>
+          </p>
         </div>
       </div>
     </div>
