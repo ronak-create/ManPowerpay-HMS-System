@@ -4,13 +4,14 @@ import path from 'path';
 import { listEmployees, getEmployee, createEmployee, updateEmployee, toggleEmployeeStatus, uploadDocument, getMeta, bulkUploadEmployees, finalizeBulkUpload, downloadBulkTemplate, generateAppointmentLetter, downloadAppointmentLetter, downloadRelievingLetter } from './employee.controller.js';
 import { verifyJWT } from '../../middleware/auth.js';
 import { requireRole } from '../../middleware/roles.js';
+import { documentFileFilter, spreadsheetFileFilter } from '../../utils/uploads.js';
 
 const storage = multer.diskStorage({
   destination: 'uploads/documents/',
   filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
 });
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
-const bulkUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 } });
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: documentFileFilter });
+const bulkUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 }, fileFilter: spreadsheetFileFilter });
 
 const router = Router();
 router.use(verifyJWT);

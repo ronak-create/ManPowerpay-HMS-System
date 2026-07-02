@@ -3,8 +3,9 @@ import multer from 'multer';
 import { getTeamAttendance, getEmployeeAttendance, markBulkAttendance, adminCorrect, getAttendanceSummary, downloadAttendanceTemplate, bulkUploadAttendance } from './attendance.controller.js';
 import { verifyJWT } from '../../middleware/auth.js';
 import { requireRole } from '../../middleware/roles.js';
+import { spreadsheetFileFilter } from '../../utils/uploads.js';
 
-const bulkUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 } });
+const bulkUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 }, fileFilter: spreadsheetFileFilter });
 
 const router = Router();
 router.use(verifyJWT);

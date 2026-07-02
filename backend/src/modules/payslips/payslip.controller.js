@@ -6,6 +6,7 @@ import ApiResponse from '../../utils/ApiResponse.js';
 import asyncHandler from '../../utils/asyncHandler.js';
 import { generatePayslipPDF } from '../../utils/pdfGenerator.js';
 import { sendPayslipEmail } from '../../utils/mailer.js';
+import { assertPathWithin } from '../../utils/uploads.js';
 
 // GET /api/payslips — List payslips (employee: own; admin: all)
 export const listPayslips = asyncHandler(async (req, res) => {
@@ -87,10 +88,11 @@ export const downloadPayslip = asyncHandler(async (req, res) => {
 
   const company = await prisma.company.findFirst();
 
-  // Check if PDF already exists on disk
+  // Check if PDF already exists on disk (guard against path traversal)
   if (payslip.pdfPath) {
     try {
-      const buf = await fs.readFile(payslip.pdfPath);
+      const safePath = assertPathWithin('uploads/payslips', payslip.pdfPath);
+      const buf = await fs.readFile(safePath);
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename=payslip_${payslip.month}_${payslip.year}_${payslip.employee.empCode}.pdf`);
       return res.send(buf);

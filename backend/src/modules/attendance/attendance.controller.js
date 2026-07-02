@@ -232,16 +232,29 @@ export const bulkUploadAttendance = asyncHandler(async (req, res) => {
     });
   });
 
+  // Batch-load employees by code once instead of one query per row (avoids N+1).
+  const codes = [...new Set(records.map(r => r.empCode).filter(Boolean))];
+  const employees = await prisma.employee.findMany({ where: { empCode: { in: codes } } });
+  const empByCode = new Map(employees.map(e => [e.empCode, e]));
+
+  // Cache payroll-lock status per month/year rather than querying per row.
+  const lockCache = new Map();
+  const isMonthLocked = async (date) => {
+    const key = `${date.getFullYear()}-${date.getMonth() + 1}`;
+    if (!lockCache.has(key)) lockCache.set(key, await isDateLocked(date));
+    return lockCache.get(key);
+  };
+
   for (const r of records) {
     try {
       if (!r.date || !r.empCode || !r.status) throw new Error('Missing required fields');
-      
-      const emp = await prisma.employee.findUnique({ where: { empCode: r.empCode } });
+
+      const emp = empByCode.get(r.empCode);
       if (!emp) throw new Error(`Employee ${r.empCode} not found`);
 
       const date = new Date(r.date);
       if (isNaN(date.getTime())) throw new Error('Invalid date format');
-      if (await isDateLocked(date)) throw new Error('Attendance month is locked');
+      if (await isMonthLocked(date)) throw new Error('Attendance month is locked');
 
       await prisma.attendance.upsert({
         where: { employeeId_date: { employeeId: emp.id, date } },
