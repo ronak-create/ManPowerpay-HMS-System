@@ -14,22 +14,20 @@ async function countWorkingDays(from, to) {
   return days.filter(d => d.getDay() !== 0 && !holidaySet.has(d.toISOString().split('T')[0])).length;
 }
 
-// Helper: update attendance records for a date range
-async function applyLeaveToAttendance(employeeId, fromDate, toDate, status, markedById) {
+// Helper: update attendance records for a date range.
+// Runs on the provided Prisma client (`client`), which may be a transaction handle.
+async function applyLeaveToAttendance(client, employeeId, fromDate, toDate, status, markedById) {
   const days = eachDayOfInterval({ start: new Date(fromDate), end: new Date(toDate) });
-  const holidays = await prisma.holiday.findMany({ where: { date: { gte: new Date(fromDate), lte: new Date(toDate) } } });
+  const holidays = await client.holiday.findMany({ where: { date: { gte: new Date(fromDate), lte: new Date(toDate) } } });
   const holidaySet = new Set(holidays.map(h => h.date.toISOString().split('T')[0]));
 
-  const upserts = days
-    .filter(d => d.getDay() !== 0 && !holidaySet.has(d.toISOString().split('T')[0]))
-    .map(d =>
-      prisma.attendance.upsert({
-        where: { employeeId_date: { employeeId, date: d } },
-        create: { employeeId, date: d, status, markedById },
-        update: { status }
-      })
-    );
-  await prisma.$transaction(upserts);
+  for (const d of days.filter(d => d.getDay() !== 0 && !holidaySet.has(d.toISOString().split('T')[0]))) {
+    await client.attendance.upsert({
+      where: { employeeId_date: { employeeId, date: d } },
+      create: { employeeId, date: d, status, markedById },
+      update: { status }
+    });
+  }
 }
 
 // GET /api/leaves — List leave requests
@@ -119,25 +117,28 @@ export const approveLeave = asyncHandler(async (req, res) => {
   if (!leave) throw new ApiError(404, 'Leave request not found');
   if (leave.status !== 'pending') throw new ApiError(400, 'Leave is not in pending state');
 
-  // Deduct balance (except LWP)
-  if (leave.leaveType !== 'LWP') {
-    const year = leave.fromDate.getFullYear();
-    const balance = await prisma.leaveBalance.findUnique({ where: { employeeId_leaveType_year: { employeeId: leave.employeeId, leaveType: leave.leaveType, year } } });
-    if (balance) {
-      await prisma.leaveBalance.update({
-        where: { employeeId_leaveType_year: { employeeId: leave.employeeId, leaveType: leave.leaveType, year } },
+  const attendanceStatus = leave.leaveType === 'LWP' ? 'LWP' : 'PL';
+
+  // Balance deduction, attendance update, and status change must be atomic so a
+  // concurrent approval cannot double-spend the balance or leave records inconsistent.
+  await prisma.$transaction(async (tx) => {
+    if (leave.leaveType !== 'LWP') {
+      const year = leave.fromDate.getFullYear();
+      // Conditional decrement — only succeeds if enough balance remains, so the
+      // balance can never go negative even under concurrent approvals.
+      const res = await tx.leaveBalance.updateMany({
+        where: { employeeId: leave.employeeId, leaveType: leave.leaveType, year, balance: { gte: leave.totalDays } },
         data: { used: { increment: leave.totalDays }, balance: { decrement: leave.totalDays } }
       });
+      if (res.count === 0) throw new ApiError(400, `Insufficient ${leave.leaveType} balance to approve`);
     }
-  }
 
-  // Update attendance
-  const attendanceStatus = leave.leaveType === 'LWP' ? 'LWP' : 'PL';
-  await applyLeaveToAttendance(leave.employeeId, leave.fromDate, leave.toDate, attendanceStatus, req.user.id);
+    await applyLeaveToAttendance(tx, leave.employeeId, leave.fromDate, leave.toDate, attendanceStatus, req.user.id);
 
-  await prisma.leaveRequest.update({
-    where: { id: req.params.id },
-    data: { status: 'approved', approvedById: req.user.id, approvedAt: new Date(), remarks: req.body.remarks }
+    await tx.leaveRequest.update({
+      where: { id: req.params.id },
+      data: { status: 'approved', approvedById: req.user.id, approvedAt: new Date(), remarks: req.body.remarks }
+    });
   });
 
   const empUser = await prisma.employee.findUnique({ where: { id: leave.employeeId }, select: { userId: true } });

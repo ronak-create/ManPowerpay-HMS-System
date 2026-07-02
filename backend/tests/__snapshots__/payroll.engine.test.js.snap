@@ -1,0 +1,361 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`calculatePayroll — golden master > A: full month, high salary (no ESIC) 1`] = `
+{
+  "basicPayable": 25000,
+  "deductionsJson": [
+    {
+      "amount": 1800,
+      "name": "Employee PF (EPF)",
+    },
+    {
+      "amount": 200,
+      "name": "Professional Tax",
+    },
+  ],
+  "earningsJson": [
+    {
+      "amount": 25000,
+      "name": "Basic",
+    },
+    {
+      "amount": 10000,
+      "name": "HRA",
+    },
+    {
+      "amount": 1600,
+      "name": "Travel Allowance",
+    },
+    {
+      "amount": 13400,
+      "name": "Special Allowance",
+    },
+  ],
+  "employerContribJson": [
+    {
+      "amount": 1800,
+      "name": "Employer PF",
+    },
+  ],
+  "grossPayable": 50000,
+  "lwpDays": 0,
+  "netPay": 48000,
+  "otHours": 0,
+  "presentDays": 26,
+  "tdsThisMonth": 0,
+  "totalDeductions": 2000,
+  "workingDays": 26,
+}
+`;
+
+exports[`calculatePayroll — golden master > B: partial month with LWP 1`] = `
+{
+  "basicPayable": 19230.77,
+  "deductionsJson": [
+    {
+      "amount": 11538.46,
+      "name": "LWP Deduction (6 days)",
+    },
+    {
+      "amount": 1800,
+      "name": "Employee PF (EPF)",
+    },
+    {
+      "amount": 200,
+      "name": "Professional Tax",
+    },
+  ],
+  "earningsJson": [
+    {
+      "amount": 25000,
+      "name": "Basic",
+    },
+    {
+      "amount": 10000,
+      "name": "HRA",
+    },
+    {
+      "amount": 1600,
+      "name": "Travel Allowance",
+    },
+    {
+      "amount": 13400,
+      "name": "Special Allowance",
+    },
+  ],
+  "employerContribJson": [
+    {
+      "amount": 1800,
+      "name": "Employer PF",
+    },
+  ],
+  "grossPayable": 50000,
+  "lwpDays": 6,
+  "netPay": 36461.54,
+  "otHours": 0,
+  "presentDays": 20,
+  "tdsThisMonth": 0,
+  "totalDeductions": 13538.46,
+  "workingDays": 26,
+}
+`;
+
+exports[`calculatePayroll — golden master > C: full month with overtime 1`] = `
+{
+  "basicPayable": 25000,
+  "deductionsJson": [
+    {
+      "amount": 1800,
+      "name": "Employee PF (EPF)",
+    },
+    {
+      "amount": 200,
+      "name": "Professional Tax",
+    },
+  ],
+  "earningsJson": [
+    {
+      "amount": 25000,
+      "name": "Basic",
+    },
+    {
+      "amount": 10000,
+      "name": "HRA",
+    },
+    {
+      "amount": 1600,
+      "name": "Travel Allowance",
+    },
+    {
+      "amount": 13400,
+      "name": "Special Allowance",
+    },
+    {
+      "amount": 2403.85,
+      "name": "Overtime",
+    },
+  ],
+  "employerContribJson": [
+    {
+      "amount": 1800,
+      "name": "Employer PF",
+    },
+  ],
+  "grossPayable": 52403.85,
+  "lwpDays": 0,
+  "netPay": 50403.85,
+  "otHours": 10,
+  "presentDays": 26,
+  "tdsThisMonth": 0,
+  "totalDeductions": 2000,
+  "workingDays": 26,
+}
+`;
+
+exports[`calculatePayroll — golden master > D: low salary, ESIC applicable (gross <= 21000) 1`] = `
+{
+  "basicPayable": 10000,
+  "deductionsJson": [
+    {
+      "amount": 1200,
+      "name": "Employee PF (EPF)",
+    },
+    {
+      "amount": 150,
+      "name": "Employee ESIC",
+    },
+    {
+      "amount": 200,
+      "name": "Professional Tax",
+    },
+  ],
+  "earningsJson": [
+    {
+      "amount": 10000,
+      "name": "Basic",
+    },
+    {
+      "amount": 4000,
+      "name": "HRA",
+    },
+    {
+      "amount": 1600,
+      "name": "Travel Allowance",
+    },
+    {
+      "amount": 4400,
+      "name": "Special Allowance",
+    },
+  ],
+  "employerContribJson": [
+    {
+      "amount": 1200,
+      "name": "Employer PF",
+    },
+    {
+      "amount": 650,
+      "name": "Employer ESIC",
+    },
+  ],
+  "grossPayable": 20000,
+  "lwpDays": 0,
+  "netPay": 18450,
+  "otHours": 0,
+  "presentDays": 26,
+  "tdsThisMonth": 0,
+  "totalDeductions": 1550,
+  "workingDays": 26,
+}
+`;
+
+exports[`calculatePayroll — golden master > E: with advance EMI recovery 1`] = `
+{
+  "basicPayable": 25000,
+  "deductionsJson": [
+    {
+      "amount": 1800,
+      "name": "Employee PF (EPF)",
+    },
+    {
+      "amount": 200,
+      "name": "Professional Tax",
+    },
+    {
+      "amount": 5000,
+      "name": "Salary Advance Recovery",
+    },
+  ],
+  "earningsJson": [
+    {
+      "amount": 25000,
+      "name": "Basic",
+    },
+    {
+      "amount": 10000,
+      "name": "HRA",
+    },
+    {
+      "amount": 1600,
+      "name": "Travel Allowance",
+    },
+    {
+      "amount": 13400,
+      "name": "Special Allowance",
+    },
+  ],
+  "employerContribJson": [
+    {
+      "amount": 1800,
+      "name": "Employer PF",
+    },
+  ],
+  "grossPayable": 50000,
+  "lwpDays": 0,
+  "netPay": 43000,
+  "otHours": 0,
+  "presentDays": 26,
+  "tdsThisMonth": 0,
+  "totalDeductions": 7000,
+  "workingDays": 26,
+}
+`;
+
+exports[`calculatePayroll — golden master > F: worked more than the 26-day base (over-attendance) 1`] = `
+{
+  "basicPayable": 25000,
+  "deductionsJson": [
+    {
+      "amount": 1800,
+      "name": "Employee PF (EPF)",
+    },
+    {
+      "amount": 200,
+      "name": "Professional Tax",
+    },
+  ],
+  "earningsJson": [
+    {
+      "amount": 25000,
+      "name": "Basic",
+    },
+    {
+      "amount": 10000,
+      "name": "HRA",
+    },
+    {
+      "amount": 1600,
+      "name": "Travel Allowance",
+    },
+    {
+      "amount": 13400,
+      "name": "Special Allowance",
+    },
+  ],
+  "employerContribJson": [
+    {
+      "amount": 1800,
+      "name": "Employer PF",
+    },
+  ],
+  "grossPayable": 50000,
+  "lwpDays": 0,
+  "netPay": 48000,
+  "otHours": 0,
+  "presentDays": 30,
+  "tdsThisMonth": 0,
+  "totalDeductions": 2000,
+  "workingDays": 26,
+}
+`;
+
+exports[`calculatePayroll — golden master > G: with projected TDS 1`] = `
+{
+  "basicPayable": 25000,
+  "deductionsJson": [
+    {
+      "amount": 1800,
+      "name": "Employee PF (EPF)",
+    },
+    {
+      "amount": 200,
+      "name": "Professional Tax",
+    },
+    {
+      "amount": 5000,
+      "name": "TDS / Income Tax",
+    },
+  ],
+  "earningsJson": [
+    {
+      "amount": 25000,
+      "name": "Basic",
+    },
+    {
+      "amount": 10000,
+      "name": "HRA",
+    },
+    {
+      "amount": 1600,
+      "name": "Travel Allowance",
+    },
+    {
+      "amount": 13400,
+      "name": "Special Allowance",
+    },
+  ],
+  "employerContribJson": [
+    {
+      "amount": 1800,
+      "name": "Employer PF",
+    },
+  ],
+  "grossPayable": 50000,
+  "lwpDays": 0,
+  "netPay": 43000,
+  "otHours": 0,
+  "presentDays": 26,
+  "tdsThisMonth": 5000,
+  "totalDeductions": 7000,
+  "workingDays": 26,
+}
+`;

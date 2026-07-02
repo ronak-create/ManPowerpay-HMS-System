@@ -85,7 +85,10 @@ export const createPayrollRun = asyncHandler(async (req, res) => {
     const currentFyMonth = month >= 4 ? month - 3 : month + 9;
     const remainingMonths = fyMonthsTotal - currentFyMonth + 1;
 
-    const activeAdvance = emp.advanceLoans[0];
+    // Recover EMI for every active loan, capped at each loan's outstanding balance.
+    const advanceEmi = emp.advanceLoans.reduce(
+      (sum, loan) => sum + Math.min(loan.emi, loan.balanceRemaining), 0
+    );
 
     const result = calculatePayroll({
       employee: emp,
@@ -97,7 +100,7 @@ export const createPayrollRun = asyncHandler(async (req, res) => {
         taxDeductedSoFar,
         remainingMonths
       },
-      advanceEmi: activeAdvance?.emi || 0
+      advanceEmi
     });
 
     // Omit fields not in the Payslip database model (like basicPayable)
@@ -165,12 +168,11 @@ export const lockPayroll = asyncHandler(async (req, res) => {
   if (run.status !== 'approved') throw new ApiError(400, 'Only approved payrolls can be locked');
 
   await prisma.$transaction(async (tx) => {
-    // Generate PDFs and update advance loans
+    // Reduce every active advance loan, flooring the balance at 0.
     for (const payslip of run.payslips) {
-      // Reduce advance loan balance
-      if (payslip.employee.advanceLoans.length > 0) {
-        const loan = payslip.employee.advanceLoans[0];
-        const newBalance = loan.balanceRemaining - loan.emi;
+      for (const loan of payslip.employee.advanceLoans) {
+        const recovered = Math.min(loan.emi, loan.balanceRemaining);
+        const newBalance = Math.max(0, loan.balanceRemaining - recovered);
         await tx.advanceLoan.update({
           where: { id: loan.id },
           data: { balanceRemaining: newBalance, status: newBalance <= 0 ? 'closed' : 'active' }

@@ -15,7 +15,10 @@ export function calculatePayroll({ employee, attendance, company, ptSlabs, tdsIn
   const { workingDays, daysWorked, otHours, lwpDays } = attendance;
 
   const monthlyCTC = annualCTC / 12;
-  const proRateFactor = workingDays > 0 ? daysWorked / workingDays : 0;
+  // Cap at 1.0 — an employee cannot earn more than a full month's base salary from
+  // attendance alone (extra time is paid separately as overtime). Without the cap,
+  // working more days than the base (e.g. 30 against a 26-day base) overpays.
+  const proRateFactor = workingDays > 0 ? Math.min(1, daysWorked / workingDays) : 0;
 
   const components = [...(salaryTemplate?.components || [])].sort((a, b) => a.sequence - b.sequence);
   const earnings = [];
@@ -42,25 +45,42 @@ export function calculatePayroll({ employee, attendance, company, ptSlabs, tdsIn
   const grossFull = round(monthlyCTC + otEarnings);
   const lwpDeduction = round(monthlyCTC * (1 - proRateFactor));
 
-  // Step 4: Earnings breakdown
-  components.filter(c => c.type === 'earning').forEach(c => {
-    let amount = 0;
-    if (c.name.toLowerCase() === 'basic') {
-      amount = basicFull;
-    } else if (c.basis === 'percent_of_basic') {
-      amount = basicFull * (c.value / 100);
-    } else if (c.basis === 'percent_of_gross') {
-      amount = monthlyCTC * (c.value / 100);
-    } else if (c.basis === 'fixed') {
-      amount = c.value;
-    } else if (c.basis === 'ot_formula') {
-      amount = otEarnings;
-    }
-    if (amount > 0) earnings.push({ name: c.name, amount: round(amount) });
-  });
+  // Step 4: Earnings breakdown.
+  // A fixed earning with value 0 acts as the residual ("Special Allowance") that
+  // balances the base earnings up to the monthly CTC, so the payslip line items
+  // always sum to gross. Overtime is added on top of the base.
+  const otComp = components.find(c => c.type === 'earning' && c.basis === 'ot_formula');
+  const residualComp = components.find(c => c.type === 'earning' && c.basis === 'fixed' && !c.value);
 
-  if (otEarnings > 0 && !components.find(c => c.basis === 'ot_formula')) {
-    earnings.push({ name: 'Overtime', amount: round(otEarnings) });
+  let baseEarningsSum = 0;
+  components
+    .filter(c => c.type === 'earning' && c !== residualComp && c.basis !== 'ot_formula')
+    .forEach(c => {
+      let amount = 0;
+      if (c.name.toLowerCase() === 'basic') {
+        amount = basicFull;
+      } else if (c.basis === 'percent_of_basic') {
+        amount = basicFull * (c.value / 100);
+      } else if (c.basis === 'percent_of_gross') {
+        amount = monthlyCTC * (c.value / 100);
+      } else if (c.basis === 'fixed') {
+        amount = c.value;
+      }
+      if (amount > 0) {
+        const rounded = round(amount);
+        earnings.push({ name: c.name, amount: rounded });
+        baseEarningsSum += rounded;
+      }
+    });
+
+  // Residual absorbs the gap so base earnings reconcile to the monthly CTC.
+  if (residualComp) {
+    const residual = round(monthlyCTC - baseEarningsSum);
+    if (residual > 0) earnings.push({ name: residualComp.name, amount: residual });
+  }
+
+  if (otEarnings > 0) {
+    earnings.push({ name: otComp?.name || 'Overtime', amount: round(otEarnings) });
   }
 
   // Step 5: Deductions
