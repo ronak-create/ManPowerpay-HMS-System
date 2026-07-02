@@ -9,6 +9,7 @@ import asyncHandler from "../../utils/asyncHandler.js";
 import { logAudit } from "../../utils/auditLog.js";
 import { generateTempPassword } from "../../utils/password.js";
 import { saveFile } from "../../lib/storage.js";
+import { assertCanAddEmployees } from "../../lib/plan.js";
 import { generateAppointmentLetterPDF } from "../../utils/appointmentLetterGenerator.js";
 import { generateRelievingLetterPDF } from "../../utils/relievingLetterGenerator.js";
 
@@ -199,7 +200,7 @@ export const finalizeBulkUpload = asyncHandler(async (req, res) => {
       });
       if (conflict) throw new Error("Email or mobile already exists");
 
-      const codeConflict = await prisma.employee.findUnique({ where: { empCode: r.empCode } });
+      const codeConflict = await prisma.employee.findFirst({ where: { empCode: r.empCode } });
       if (codeConflict) throw new Error("Employee ID already exists");
 
       let finalDeptId = r.departmentId;
@@ -404,8 +405,9 @@ export const createEmployee = asyncHandler(async (req, res) => {
     where: { OR: [{ email }, { mobile }] },
   });
   if (existing) throw new ApiError(400, "Email or mobile already registered");
-  const empExisting = await prisma.employee.findUnique({ where: { empCode } });
+  const empExisting = await prisma.employee.findFirst({ where: { empCode } });
   if (empExisting) throw new ApiError(400, "Employee code already exists");
+  await assertCanAddEmployees(1);
   // Use the provided password, otherwise generate a random temp one the employee
   // must change on first login (no shared default password).
   const usingTempPassword = !password;

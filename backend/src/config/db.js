@@ -42,7 +42,10 @@ function scopeArgs(model, operation, args, companyId) {
         : { ...a.data, [field]: companyId };
       break;
     case 'upsert':
-      withTenantWhere();
+      // Only inject into create; the caller supplies a tenant-safe unique key in
+      // `where` (a companyId-compound key, or an employee-scoped key). Injecting a
+      // top-level companyId into an upsert where alongside a compound key is
+      // avoided to prevent key-shape conflicts.
       a.create = { ...(a.create || {}), [field]: companyId };
       break;
     default:

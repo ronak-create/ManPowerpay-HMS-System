@@ -23,8 +23,8 @@ export const createPayrollRun = asyncHandler(async (req, res) => {
   const { month, year } = req.body;
   if (!month || !year) throw new ApiError(400, 'month and year required');
 
-  // Check for existing locked run
-  const existing = await prisma.payrollRun.findUnique({ where: { month_year: { month, year } } });
+  // Check for existing locked run (tenant-scoped by the Prisma extension)
+  const existing = await prisma.payrollRun.findFirst({ where: { month, year } });
   if (existing?.status === 'locked') throw new ApiError(400, 'Payroll for this month is already locked');
 
   const company = await prisma.company.findFirst({ include: { ptSlabs: true } });
@@ -49,12 +49,10 @@ export const createPayrollRun = asyncHandler(async (req, res) => {
     ? 26
     : allDays.filter(d => !isSunday(d) && !holidayDates.has(dateKey(d))).length;
 
-  // Create/update the run
-  const run = await prisma.payrollRun.upsert({
-    where: { month_year: { month, year } },
-    create: { month, year, status: 'draft' },
-    update: { status: 'draft' }
-  });
+  // Create or reset the draft run (tenant-scoped; existing already fetched above)
+  const run = existing
+    ? await prisma.payrollRun.update({ where: { id: existing.id }, data: { status: 'draft' } })
+    : await prisma.payrollRun.create({ data: { month, year, status: 'draft' } });
 
   // Compute payslips for all employees
   const payslipData = await Promise.all(employees.map(async (emp) => {

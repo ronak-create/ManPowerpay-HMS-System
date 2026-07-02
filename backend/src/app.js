@@ -25,6 +25,7 @@ import form16Routes from "./modules/payslips/form16.routes.js";
 import salaryTemplateRoutes from "./modules/payroll/salaryTemplate.routes.js";
 import notificationRoutes from "./modules/notifications/notification.routes.js";
 import resignationRoutes from "./modules/resignations/resignation.routes.js";
+import billingRoutes from "./modules/billing/billing.routes.js";
 
 dotenv.config();
 
@@ -84,6 +85,7 @@ app.use("/api/reports", reportRoutes);
 app.use("/api/salary-templates", salaryTemplateRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/resignations", resignationRoutes);
+app.use("/api/billing", billingRoutes);
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 

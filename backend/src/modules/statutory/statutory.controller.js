@@ -11,8 +11,8 @@ export const generateEPFECR = asyncHandler(async (req, res) => {
   const { month, year } = req.query;
   if (!month || !year) throw new ApiError(400, 'month and year required');
 
-  const run = await prisma.payrollRun.findUnique({
-    where: { month_year: { month: parseInt(month), year: parseInt(year) } },
+  const run = await prisma.payrollRun.findFirst({
+    where: { month: parseInt(month), year: parseInt(year) },
     include: {
       payslips: {
         include: { employee: { select: { empCode: true, uanNo: true, pfAccountNo: true, pan: true } } }
@@ -65,8 +65,8 @@ export const generateEPFECR = asyncHandler(async (req, res) => {
 // GET /api/statutory/esic?month=6&year=2026
 export const generateESIC = asyncHandler(async (req, res) => {
   const { month, year } = req.query;
-  const run = await prisma.payrollRun.findUnique({
-    where: { month_year: { month: parseInt(month), year: parseInt(year) } },
+  const run = await prisma.payrollRun.findFirst({
+    where: { month: parseInt(month), year: parseInt(year) },
     include: {
       payslips: {
         include: {
@@ -132,8 +132,8 @@ export const generateESIC = asyncHandler(async (req, res) => {
 // GET /api/statutory/pt?month=6&year=2026
 export const generatePTChallan = asyncHandler(async (req, res) => {
   const { month, year } = req.query;
-  const run = await prisma.payrollRun.findUnique({
-    where: { month_year: { month: parseInt(month), year: parseInt(year) } },
+  const run = await prisma.payrollRun.findFirst({
+    where: { month: parseInt(month), year: parseInt(year) },
     include: {
       payslips: {
         include: { employee: { include: { user: { select: { name: true } } } } }

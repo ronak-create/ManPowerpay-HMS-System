@@ -16,8 +16,8 @@ async function isDateLocked(date) {
   const d = new Date(date);
   const month = d.getUTCMonth() + 1;
   const year = d.getUTCFullYear();
-  const run = await prisma.payrollRun.findUnique({
-    where: { month_year: { month, year } }
+  const run = await prisma.payrollRun.findFirst({
+    where: { month, year }
   });
   return run?.status === 'locked';
 }
