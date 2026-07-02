@@ -5,16 +5,17 @@ import ApiError from '../../utils/ApiError.js';
 import ApiResponse from '../../utils/ApiResponse.js';
 import asyncHandler from '../../utils/asyncHandler.js';
 import { logAudit } from '../../utils/auditLog.js';
+import { toDateOnly, getTodayDateOnly } from '../../utils/dates.js';
 import path from 'path';
 import fs from 'fs';
 
 const GRACE_PERIOD_DAYS = 3;
 
-// Helper: check if date is within locked payroll month
+// Helper: check if date is within locked payroll month (UTC-consistent).
 async function isDateLocked(date) {
   const d = new Date(date);
-  const month = d.getMonth() + 1;
-  const year = d.getFullYear();
+  const month = d.getUTCMonth() + 1;
+  const year = d.getUTCFullYear();
   const run = await prisma.payrollRun.findUnique({
     where: { month_year: { month, year } }
   });
@@ -117,10 +118,12 @@ export const markBulkAttendance = asyncHandler(async (req, res) => {
   const { date, records } = req.body;
   if (!date || !records?.length) throw new ApiError(400, 'date and records are required');
 
-  const attendanceDate = new Date(date);
-  attendanceDate.setHours(0, 0, 0, 0);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const company = await prisma.company.findFirst({ select: { timezone: true } });
+  const attendanceDate = toDateOnly(date);
+  if (!attendanceDate) throw new ApiError(400, 'Invalid date');
+  // "Today" resolved in the company timezone so a UTC server doesn't reject or
+  // allow the wrong calendar day near midnight.
+  const today = getTodayDateOnly(company?.timezone);
 
   if (attendanceDate > today) throw new ApiError(400, 'Cannot mark future attendance');
   if (await isDateLocked(attendanceDate)) throw new ApiError(400, 'Attendance for this month is locked (payroll has been processed)');
@@ -252,8 +255,8 @@ export const bulkUploadAttendance = asyncHandler(async (req, res) => {
       const emp = empByCode.get(r.empCode);
       if (!emp) throw new Error(`Employee ${r.empCode} not found`);
 
-      const date = new Date(r.date);
-      if (isNaN(date.getTime())) throw new Error('Invalid date format');
+      const date = toDateOnly(r.date);
+      if (!date) throw new Error('Invalid date format');
       if (await isMonthLocked(date)) throw new Error('Attendance month is locked');
 
       await prisma.attendance.upsert({

@@ -5,6 +5,7 @@ import ApiResponse from '../../utils/ApiResponse.js';
 import asyncHandler from '../../utils/asyncHandler.js';
 import { calculatePayroll } from './payroll.engine.js';
 import { logAudit } from '../../utils/auditLog.js';
+import { isSunday, dateKey } from '../../utils/dates.js';
 import { generateForm16ForEmployee } from '../payslips/form16.controller.js';
 import { notifyAllEmployees } from '../../utils/notify.js';
 
@@ -43,10 +44,10 @@ export const createPayrollRun = asyncHandler(async (req, res) => {
   const endDate = new Date(year, month, 0);
   const allDays = eachDayOfInterval({ start: startDate, end: endDate });
   const holidays = await prisma.holiday.findMany({ where: { date: { gte: startDate, lte: endDate } } });
-  const holidayDates = new Set(holidays.map(h => h.date.toISOString().split('T')[0]));
+  const holidayDates = new Set(holidays.map(h => dateKey(h.date)));
   const workingDays = company.workingDaysBase === 26
     ? 26
-    : allDays.filter(d => d.getDay() !== 0 && !holidayDates.has(d.toISOString().split('T')[0])).length;
+    : allDays.filter(d => !isSunday(d) && !holidayDates.has(dateKey(d))).length;
 
   // Create/update the run
   const run = await prisma.payrollRun.upsert({

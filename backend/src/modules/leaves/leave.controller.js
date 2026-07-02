@@ -5,13 +5,14 @@ import ApiResponse from '../../utils/ApiResponse.js';
 import asyncHandler from '../../utils/asyncHandler.js';
 import { logAudit } from '../../utils/auditLog.js';
 import { createNotification } from '../../utils/notify.js';
+import { isSunday, dateKey } from '../../utils/dates.js';
 
 // Helper: count working days in a date range (excludes Sundays & holidays)
 async function countWorkingDays(from, to) {
   const days = eachDayOfInterval({ start: new Date(from), end: new Date(to) });
   const holidays = await prisma.holiday.findMany({ where: { date: { gte: new Date(from), lte: new Date(to) } } });
-  const holidaySet = new Set(holidays.map(h => h.date.toISOString().split('T')[0]));
-  return days.filter(d => d.getDay() !== 0 && !holidaySet.has(d.toISOString().split('T')[0])).length;
+  const holidaySet = new Set(holidays.map(h => dateKey(h.date)));
+  return days.filter(d => !isSunday(d) && !holidaySet.has(dateKey(d))).length;
 }
 
 // Helper: update attendance records for a date range.
@@ -19,9 +20,9 @@ async function countWorkingDays(from, to) {
 async function applyLeaveToAttendance(client, employeeId, fromDate, toDate, status, markedById) {
   const days = eachDayOfInterval({ start: new Date(fromDate), end: new Date(toDate) });
   const holidays = await client.holiday.findMany({ where: { date: { gte: new Date(fromDate), lte: new Date(toDate) } } });
-  const holidaySet = new Set(holidays.map(h => h.date.toISOString().split('T')[0]));
+  const holidaySet = new Set(holidays.map(h => dateKey(h.date)));
 
-  for (const d of days.filter(d => d.getDay() !== 0 && !holidaySet.has(d.toISOString().split('T')[0]))) {
+  for (const d of days.filter(d => !isSunday(d) && !holidaySet.has(dateKey(d)))) {
     await client.attendance.upsert({
       where: { employeeId_date: { employeeId, date: d } },
       create: { employeeId, date: d, status, markedById },

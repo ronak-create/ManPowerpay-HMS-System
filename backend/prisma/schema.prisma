@@ -114,6 +114,7 @@ model Company {
   epfCode          String?  // EPF establishment code
   esicCode         String?  // ESIC employer code
   ptState          String   @default("Gujarat")
+  timezone         String   @default("Asia/Kolkata") // IANA tz for date boundaries
   payrollCycleDay  Int      @default(1)  // Day of month payroll is run
   workingDaysBase  Int      @default(26) // 26 or calendar days
   otMultiplier     Float    @default(2.0)
