@@ -55,8 +55,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(trimMiddleware);
 
-// Serve logos publicly, but nothing else (security hardening)
-app.use("/uploads/logos", express.static("uploads/logos"));
+// Company logos are served via GET /api/company/logo (streamed from storage).
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes

@@ -8,6 +8,7 @@ import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { logAudit } from "../../utils/auditLog.js";
 import { generateTempPassword } from "../../utils/password.js";
+import { saveFile } from "../../lib/storage.js";
 import { generateAppointmentLetterPDF } from "../../utils/appointmentLetterGenerator.js";
 import { generateRelievingLetterPDF } from "../../utils/relievingLetterGenerator.js";
 
@@ -578,8 +579,14 @@ export const toggleEmployeeStatus = asyncHandler(async (req, res) => {
 export const uploadDocument = asyncHandler(async (req, res) => {
   if (!req.file) throw new ApiError(400, "No file uploaded");
   const { type } = req.body;
+  const ext = path.extname(req.file.originalname) || "";
+  const key = await saveFile(
+    `documents/${req.params.id}_${type}_${Date.now()}${ext}`,
+    req.file.buffer,
+    req.file.mimetype,
+  );
   await prisma.employeeDocument.create({
-    data: { employeeId: req.params.id, type, filePath: req.file.path },
+    data: { employeeId: req.params.id, type, filePath: key },
   });
   res.json(new ApiResponse(201, null, "Document uploaded"));
 });
@@ -604,29 +611,19 @@ export const generateAppointmentLetter = asyncHandler(async (req, res) => {
   const company = await prisma.company.findFirst();
   if (!company) throw new ApiError(404, "Company not configured");
   const pdfBuffer = await generateAppointmentLetterPDF(employee, company);
-  const fileName = `${employee.empCode}_appointment.pdf`;
-  const relativePath = `uploads/documents/${fileName}`;
-  const filePath = path.join(process.cwd(), relativePath);
-  await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.promises.writeFile(filePath, pdfBuffer);
+  const key = await saveFile(`documents/${employee.empCode}_appointment.pdf`, pdfBuffer, "application/pdf");
   await prisma.employeeDocument.upsert({
     where: {
       employeeId_type: { employeeId: employee.id, type: "appointment_letter" },
     },
-    update: { filePath: relativePath, uploadedAt: new Date() },
+    update: { filePath: key, uploadedAt: new Date() },
     create: {
       employeeId: employee.id,
       type: "appointment_letter",
-      filePath: relativePath,
+      filePath: key,
     },
   });
-  res.json(
-    new ApiResponse(
-      200,
-      { filePath: relativePath },
-      "Appointment letter generated",
-    ),
-  );
+  res.json(new ApiResponse(200, { filePath: key }, "Appointment letter generated"));
 });
 
 // GET /api/employees/:id/appointment-letter

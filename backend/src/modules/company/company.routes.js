@@ -1,17 +1,18 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { getCompany, updateCompany, uploadLogo, addHoliday, deleteHoliday, updatePTSlabs, addSite, deleteSite, addDepartment, deleteDepartment, createAdvanceLoan, listAdvanceLoans } from './company.controller.js';
+import { getCompany, updateCompany, uploadLogo, getLogo, addHoliday, deleteHoliday, updatePTSlabs, addSite, deleteSite, addDepartment, deleteDepartment, createAdvanceLoan, listAdvanceLoans } from './company.controller.js';
 import { verifyJWT } from '../../middleware/auth.js';
 import { requireRole } from '../../middleware/roles.js';
 import { imageFileFilter } from '../../utils/uploads.js';
 
-const storage = multer.diskStorage({
-  destination: 'uploads/logos/',
-  filename: (_, file, cb) => cb(null, `logo_${Date.now()}_${file.originalname}`)
-});
-const upload = multer({ storage, limits: { fileSize: 2 * 1024 * 1024 }, fileFilter: imageFileFilter });
+// Memory storage: logo is streamed to the storage abstraction (Render disk is ephemeral).
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 }, fileFilter: imageFileFilter });
 
 const router = Router();
+
+// Public: logo is rendered in <img> tags which can't send an auth header.
+router.get('/logo', getLogo);
+
 router.use(verifyJWT);
 
 router.get('/', getCompany);

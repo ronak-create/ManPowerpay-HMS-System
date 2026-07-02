@@ -6,11 +6,9 @@ import { verifyJWT } from '../../middleware/auth.js';
 import { requireRole } from '../../middleware/roles.js';
 import { documentFileFilter, spreadsheetFileFilter } from '../../utils/uploads.js';
 
-const storage = multer.diskStorage({
-  destination: 'uploads/documents/',
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
-});
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: documentFileFilter });
+// Memory storage: files are streamed to the storage abstraction, not the local disk
+// (Render's filesystem is ephemeral).
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: documentFileFilter });
 const bulkUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 }, fileFilter: spreadsheetFileFilter });
 
 const router = Router();

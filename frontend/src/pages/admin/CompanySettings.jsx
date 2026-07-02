@@ -51,8 +51,9 @@ function CompanyProfileTab({ company, onSaved }) {
     },
   });
   const [saving, setSaving] = useState(false);
+  const apiBase = import.meta.env.VITE_API_URL || "/api";
   const [logoPreview, setLogoPreview] = useState(
-    company.logoPath ? `/uploads/${company.logoPath.split("/").pop()}` : null,
+    company.logoPath ? `${apiBase}/company/logo?t=${Date.now()}` : null,
   );
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const fileRef = useRef();

@@ -1,11 +1,10 @@
 import PdfPrinter from 'pdfmake';
 import { format } from 'date-fns';
-import path from 'path';
-import fs from 'fs';
 import prisma from '../../config/db.js';
 import ApiError from '../../utils/ApiError.js';
 import ApiResponse from '../../utils/ApiResponse.js';
 import asyncHandler from '../../utils/asyncHandler.js';
+import { saveFile, getBuffer } from '../../lib/storage.js';
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
@@ -190,16 +189,12 @@ export const generateForm16ForEmployee = async (employeeId, year) => {
 
   const pdfBuffer = await generateForm16PDF(employee, company, year, payslips);
   const fileName = `${employee.empCode || employeeId}_Form16_${year}.pdf`;
-  const relativePath = `uploads/form16/${fileName}`;
-  const filePath = path.join(process.cwd(), relativePath);
-
-  await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.promises.writeFile(filePath, pdfBuffer);
+  const key = await saveFile(`form16/${fileName}`, pdfBuffer, 'application/pdf');
 
   const record = await prisma.form16.upsert({
     where: { employeeId_year: { employeeId, year } },
-    update: { pdfPath: relativePath, grossSalary: totalGross, totalTDS, generatedAt: new Date() },
-    create: { employeeId, year, pdfPath: relativePath, grossSalary: totalGross, totalTDS }
+    update: { pdfPath: key, grossSalary: totalGross, totalTDS, generatedAt: new Date() },
+    create: { employeeId, year, pdfPath: key, grossSalary: totalGross, totalTDS }
   });
 
   return record;
@@ -215,24 +210,22 @@ export const downloadForm16 = asyncHandler(async (req, res) => {
   }
 
   let record = await prisma.form16.findUnique({ where: { employeeId_year: { employeeId, year } } });
-  let fullPath = record?.pdfPath ? path.join(process.cwd(), record.pdfPath) : null;
+  let buf = record?.pdfPath ? await getBuffer(record.pdfPath) : null;
 
-  // ✅ Added explicit check to guarantee the file exists on disk completely before serving
-  if (!fullPath || !fs.existsSync(fullPath)) {
+  // Regenerate if missing from storage.
+  if (!buf) {
     try {
       record = await generateForm16ForEmployee(employeeId, year);
-      fullPath = path.join(process.cwd(), record.pdfPath);
+      buf = await getBuffer(record.pdfPath);
     } catch (err) {
       throw new ApiError(404, `Form 16 Generation Error: ${err.message}`);
     }
   }
+  if (!buf) throw new ApiError(404, 'Form 16 not available');
 
-  res.download(fullPath, (err) => {
-    if (err && !res.headersSent) {
-      // Avoid dangling responses if client cancels mid-stream
-      res.status(500).send({ message: "Could not stream file securely" });
-    }
-  });
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename=${employeeId}_Form16_${year}.pdf`);
+  res.send(buf);
 });
 
 export const generateAllForm16 = asyncHandler(async (req, res) => {

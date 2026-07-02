@@ -1,12 +1,12 @@
 import prisma from '../../config/db.js';
-import fs from 'fs/promises';
-import path from 'path';
 import ApiError from '../../utils/ApiError.js';
 import ApiResponse from '../../utils/ApiResponse.js';
 import asyncHandler from '../../utils/asyncHandler.js';
 import { generatePayslipPDF } from '../../utils/pdfGenerator.js';
 import { sendPayslipEmail } from '../../utils/mailer.js';
-import { assertPathWithin } from '../../utils/uploads.js';
+import { saveFile, getBuffer } from '../../lib/storage.js';
+
+const payslipKey = (empCode, month, year) => `payslips/${empCode}_${month}_${year}.pdf`;
 
 // GET /api/payslips — List payslips (employee: own; admin: all)
 export const listPayslips = asyncHandler(async (req, res) => {
@@ -88,31 +88,20 @@ export const downloadPayslip = asyncHandler(async (req, res) => {
 
   const company = await prisma.company.findFirst();
 
-  // Check if PDF already exists on disk (guard against path traversal)
+  // Serve the cached PDF from storage if present
   if (payslip.pdfPath) {
-    try {
-      const safePath = assertPathWithin('uploads/payslips', payslip.pdfPath);
-      const buf = await fs.readFile(safePath);
+    const cached = await getBuffer(payslip.pdfPath);
+    if (cached) {
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename=payslip_${payslip.month}_${payslip.year}_${payslip.employee.empCode}.pdf`);
-      return res.send(buf);
-    } catch {
-      // PDF not found on disk — regenerate
+      return res.send(cached);
     }
   }
 
-  // Generate PDF
+  // Generate, store, and serve
   const pdfBuffer = await generatePayslipPDF(payslip, payslip.employee, company);
-
-  // Save to disk
-  const dir = 'uploads/payslips';
-  await fs.mkdir(dir, { recursive: true });
-  const filename = `${payslip.employee.empCode}_${payslip.month}_${payslip.year}.pdf`;
-  const filepath = path.join(dir, filename);
-  await fs.writeFile(filepath, pdfBuffer);
-
-  // Update payslip with PDF path
-  await prisma.payslip.update({ where: { id: payslip.id }, data: { pdfPath: filepath } });
+  const key = await saveFile(payslipKey(payslip.employee.empCode, payslip.month, payslip.year), pdfBuffer, 'application/pdf');
+  await prisma.payslip.update({ where: { id: payslip.id }, data: { pdfPath: key } });
 
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename=payslip_${payslip.month}_${payslip.year}_${payslip.employee.empCode}.pdf`);
@@ -173,15 +162,12 @@ export const generateAllPDFs = asyncHandler(async (req, res) => {
     }
   });
   const company = await prisma.company.findFirst();
-  const dir = 'uploads/payslips';
-  await fs.mkdir(dir, { recursive: true });
 
   let count = 0;
   for (const payslip of run.payslips) {
     const buf = await generatePayslipPDF(payslip, payslip.employee, company);
-    const filepath = path.join(dir, `${payslip.employee.empCode}_${run.month}_${run.year}.pdf`);
-    await fs.writeFile(filepath, buf);
-    await prisma.payslip.update({ where: { id: payslip.id }, data: { pdfPath: filepath } });
+    const key = await saveFile(payslipKey(payslip.employee.empCode, run.month, run.year), buf, 'application/pdf');
+    await prisma.payslip.update({ where: { id: payslip.id }, data: { pdfPath: key } });
     count++;
   }
 

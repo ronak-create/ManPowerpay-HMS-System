@@ -3,8 +3,10 @@ import multer from 'multer';
 import ApiError from '../../utils/ApiError.js';
 import ApiResponse from '../../utils/ApiResponse.js';
 import asyncHandler from '../../utils/asyncHandler.js';
+import path from 'path';
 import { logAudit } from '../../utils/auditLog.js';
 import { createNotification } from '../../utils/notify.js';
+import { saveFile, getBuffer } from '../../lib/storage.js';
 
 // GET /api/company
 export const getCompany = asyncHandler(async (req, res) => {
@@ -38,8 +40,23 @@ export const updateCompany = asyncHandler(async (req, res) => {
 export const uploadLogo = asyncHandler(async (req, res) => {
   if (!req.file) throw new ApiError(400, 'No file uploaded');
   const company = await prisma.company.findFirst();
-  await prisma.company.update({ where: { id: company.id }, data: { logoPath: req.file.path } });
-  res.json(new ApiResponse(200, { logoPath: req.file.path }, 'Logo uploaded'));
+  const ext = path.extname(req.file.originalname) || '.png';
+  const key = await saveFile(`logos/logo_${company.id}${ext}`, req.file.buffer, req.file.mimetype);
+  await prisma.company.update({ where: { id: company.id }, data: { logoPath: key } });
+  res.json(new ApiResponse(200, { logoPath: key }, 'Logo uploaded'));
+});
+
+// GET /api/company/logo — Public: stream the current company logo from storage
+export const getLogo = asyncHandler(async (req, res) => {
+  const company = await prisma.company.findFirst({ select: { logoPath: true } });
+  if (!company?.logoPath) throw new ApiError(404, 'No logo set');
+  const buf = await getBuffer(company.logoPath);
+  if (!buf) throw new ApiError(404, 'Logo not found');
+  const ext = path.extname(company.logoPath).toLowerCase();
+  const type = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+  res.setHeader('Content-Type', type);
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  res.send(buf);
 });
 
 // POST /api/company/holidays — Add holiday
