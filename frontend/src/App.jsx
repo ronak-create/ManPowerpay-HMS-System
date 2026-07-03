@@ -23,6 +23,7 @@ import LeaveManagement from "./pages/admin/LeaveManagement";
 import Reports from "./pages/admin/Reports";
 import AuditLogs from "./pages/admin/AuditLogs";
 import CompanySettings from "./pages/admin/CompanySettings";
+import Billing from "./pages/admin/Billing";
 import AdminResignations from "./pages/admin/Resignations";
 
 // Employee
@@ -89,6 +90,7 @@ export default function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="attendance" element={<AttendanceEntry />} />
           <Route path="company" element={<CompanySettings />} />
+          <Route path="billing" element={<Billing />} />
           <Route path="employees" element={<EmployeeList />} />
           <Route path="employees/new" element={<EmployeeForm />} />
           <Route path="employees/:id/edit" element={<EmployeeForm />} />

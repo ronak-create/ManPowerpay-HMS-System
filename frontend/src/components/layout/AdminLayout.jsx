@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Calendar, Settings, FileText,
   DollarSign, BarChart2, ClipboardList, LogOut, ChevronRight,
-  Menu, Briefcase, FilePlus, Book
+  Menu, Briefcase, FilePlus, Book, CreditCard
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import MobileSidebar from './MobileSidebar';
@@ -43,6 +43,7 @@ const navGroups = [
     label: 'System',
     items: [
       { to: '/admin/company', icon: Settings, label: 'Company Settings' },
+      { to: '/admin/billing', icon: CreditCard, label: 'Billing & Plan' },
       { to: '/admin/docs', icon: Book, label: 'User Manual' },
     ]
   },
