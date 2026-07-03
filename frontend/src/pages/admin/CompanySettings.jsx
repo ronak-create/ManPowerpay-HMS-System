@@ -12,6 +12,9 @@ import {
   Upload,
   CheckCircle,
   AlertCircle,
+  Landmark,
+  RotateCcw,
+  Info,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
@@ -1238,11 +1241,421 @@ function StructureTab({ company, onSaved }) {
   );
 }
 
+// ─── TAB 6: Statutory Rules ──────────────────────────────────────────────────
+//
+// Edits Company.statutoryConfig via GET/PUT /api/company/statutory-config.
+// The form is seeded from the *effective* config (India defaults + overrides)
+// and, on save, sends only the fields that differ from the India defaults — so
+// the persisted override stays minimal and "reset" cleanly returns to defaults.
+
+const STAT_SCHEMES = [
+  {
+    key: "epf",
+    title: "Provident Fund (EPF)",
+    desc: "Retirement contribution deducted from and matched on PF wages.",
+    toggle: true,
+    fields: [
+      { k: "label", type: "text", label: "Employee line-item label" },
+      { k: "employerLabel", type: "text", label: "Employer line-item label" },
+      { k: "base", type: "base", label: "Contribution base" },
+      { k: "employeeRate", type: "rate", label: "Employee rate (%)" },
+      { k: "employerRate", type: "rate", label: "Employer rate (%)" },
+      {
+        k: "wageCeiling",
+        type: "amountOrNull",
+        label: "Wage ceiling (₹)",
+        capLabel: "Cap the contribution base",
+      },
+    ],
+  },
+  {
+    key: "esic",
+    title: "State Insurance (ESIC)",
+    desc: "Applies only while monthly gross stays within the eligibility ceiling.",
+    toggle: true,
+    fields: [
+      { k: "label", type: "text", label: "Employee line-item label" },
+      { k: "employerLabel", type: "text", label: "Employer line-item label" },
+      { k: "base", type: "base", label: "Contribution base" },
+      { k: "employeeRate", type: "rate", label: "Employee rate (%)" },
+      { k: "employerRate", type: "rate", label: "Employer rate (%)" },
+      {
+        k: "grossThreshold",
+        type: "amountOrNull",
+        label: "Gross eligibility ceiling (₹)",
+        capLabel: "Apply only up to a gross ceiling",
+      },
+    ],
+  },
+  {
+    key: "professionalTax",
+    title: "Professional Tax",
+    desc: "Slab-driven — the amounts are configured in the PT Slabs tab; this only toggles/labels the deduction.",
+    toggle: true,
+    fields: [{ k: "label", type: "text", label: "Line-item label" }],
+  },
+  {
+    key: "tds",
+    title: "TDS / Income Tax",
+    desc: "Projected annual tax spread across the remaining months of the financial year.",
+    toggle: true,
+    fields: [{ k: "label", type: "text", label: "Line-item label" }],
+  },
+  {
+    key: "overtime",
+    title: "Overtime",
+    desc: "Hourly OT rate = base ÷ divisor days ÷ hours-per-day × OT multiplier (set in Payroll Config).",
+    toggle: false,
+    fields: [
+      { k: "label", type: "text", label: "Line-item label" },
+      { k: "divisorDays", type: "positiveNumber", label: "Divisor days" },
+      { k: "hoursPerDay", type: "positiveNumber", label: "Hours per day" },
+    ],
+  },
+];
+
+const roundTo = (n, d) => Number(Number(n).toFixed(d));
+const eqVal = (a, b) => {
+  if (a == null || b == null) return a === b;
+  if (typeof a === "number" && typeof b === "number")
+    return Math.abs(a - b) < 1e-9;
+  return a === b;
+};
+
+function initStatForm(effective) {
+  const f = {};
+  for (const s of STAT_SCHEMES) {
+    const src = effective[s.key] || {};
+    const o = {};
+    if (s.toggle) o.enabled = src.enabled !== false;
+    for (const fld of s.fields) {
+      const raw = src[fld.k];
+      if (fld.type === "rate") o[fld.k] = raw == null ? "" : roundTo(raw * 100, 4);
+      else if (fld.type === "amountOrNull") o[fld.k] = raw == null ? null : raw;
+      else o[fld.k] = raw ?? "";
+    }
+    f[s.key] = o;
+  }
+  return f;
+}
+
+function toCanonical(type, val) {
+  if (type === "rate") return val === "" ? 0 : roundTo(Number(val) / 100, 6);
+  if (type === "amountOrNull")
+    return val === null || val === "" ? null : Number(val);
+  if (type === "positiveNumber") return Number(val);
+  return val;
+}
+
+// Diff the form against the India defaults → minimal override payload.
+function buildOverrides(form, defaults) {
+  const out = {};
+  for (const s of STAT_SCHEMES) {
+    const clean = {};
+    const def = defaults[s.key] || {};
+    if (s.toggle && form[s.key].enabled !== (def.enabled ?? true)) {
+      clean.enabled = form[s.key].enabled;
+    }
+    for (const fld of s.fields) {
+      const cur = toCanonical(fld.type, form[s.key][fld.k]);
+      if (!eqVal(cur, def[fld.k])) clean[fld.k] = cur;
+    }
+    if (Object.keys(clean).length) out[s.key] = clean;
+  }
+  return out;
+}
+
+function StatToggle({ on, onChange }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!on)}
+      className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${
+        on ? "bg-amber-600" : "bg-gray-300"
+      }`}
+      role="switch"
+      aria-checked={on}
+    >
+      <span
+        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+          on ? "translate-x-6" : "translate-x-1"
+        }`}
+      />
+    </button>
+  );
+}
+
+function StatutoryConfigTab() {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [defaults, setDefaults] = useState(null);
+  const [isCustom, setIsCustom] = useState(false);
+  const [form, setForm] = useState(null);
+  const [dirty, setDirty] = useState(false);
+
+  const load = async () => {
+    try {
+      const res = await api.get("/company/statutory-config");
+      const { effective, defaults: def, isCustom: custom } = res.data.data;
+      setDefaults(def);
+      setIsCustom(custom);
+      setForm(initStatForm(effective));
+      setDirty(false);
+    } catch {
+      toast.error("Failed to load statutory rules");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const set = (scheme, field, value) => {
+    setForm((p) => ({ ...p, [scheme]: { ...p[scheme], [field]: value } }));
+    setDirty(true);
+  };
+
+  const save = async () => {
+    const overrides = buildOverrides(form, defaults);
+    setSaving(true);
+    try {
+      const res = await api.put("/company/statutory-config", {
+        statutoryConfig: Object.keys(overrides).length ? overrides : {},
+      });
+      setIsCustom(res.data.data.isCustom);
+      toast.success(
+        res.data.data.isCustom
+          ? "Statutory rules saved"
+          : "Rules match India defaults — no override stored",
+      );
+      setDirty(false);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to save statutory rules");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const resetToDefaults = async () => {
+    setSaving(true);
+    try {
+      const res = await api.put("/company/statutory-config", {
+        statutoryConfig: {},
+      });
+      setDefaults((d) => d); // unchanged
+      setIsCustom(false);
+      // Re-seed the form straight from the India defaults.
+      const seeded = {};
+      for (const s of STAT_SCHEMES) seeded[s.key] = defaults[s.key];
+      setForm(initStatForm(seeded));
+      setDirty(false);
+      toast.success("Reset to India defaults");
+    } catch {
+      toast.error("Failed to reset");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading || !form) {
+    return (
+      <div className="flex items-center justify-center h-48">
+        <div className="w-7 h-7 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header / status */}
+      <div className="flex items-start justify-between gap-4 flex-col sm:flex-row">
+        <div>
+          <h3 className="text-sm font-bold text-gray-800">
+            Statutory Rules (Jurisdiction)
+          </h3>
+          <p className="text-xs text-gray-500 mt-0.5 max-w-2xl">
+            Contribution rates, wage ceilings, eligibility thresholds and payslip
+            labels used by the payroll engine. Defaults follow Indian law (EPF /
+            ESIC / PT / TDS). Override only what differs for this company.
+          </p>
+        </div>
+        <span
+          className={`text-xs font-semibold px-3 py-1.5 rounded-lg flex-shrink-0 ${
+            isCustom
+              ? "bg-amber-50 text-amber-700 border border-amber-200"
+              : "bg-green-50 text-green-700 border border-green-200"
+          }`}
+        >
+          {isCustom ? "Custom rules" : "India defaults"}
+        </span>
+      </div>
+
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex gap-2.5 text-xs text-blue-800">
+        <Info size={14} className="flex-shrink-0 mt-0.5" />
+        <p>
+          A scheme applies to an employee only when it is enabled here{" "}
+          <strong>and</strong> the employee/template opts in. Turning a scheme{" "}
+          <strong>off</strong> removes it entirely — useful for non-India
+          tenants. Existing payslips are never changed retroactively.
+        </p>
+      </div>
+
+      {/* Scheme cards */}
+      {STAT_SCHEMES.map((s) => {
+        const state = form[s.key];
+        const disabled = s.toggle && !state.enabled;
+        return (
+          <div
+            key={s.key}
+            className="bg-white border border-gray-200 rounded-2xl p-5"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h4 className="text-sm font-bold text-gray-800">{s.title}</h4>
+                <p className="text-xs text-gray-500 mt-0.5 max-w-xl">{s.desc}</p>
+              </div>
+              {s.toggle && (
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span
+                    className={`text-xs font-semibold ${
+                      state.enabled ? "text-amber-700" : "text-gray-400"
+                    }`}
+                  >
+                    {state.enabled ? "Enabled" : "Disabled"}
+                  </span>
+                  <StatToggle
+                    on={state.enabled}
+                    onChange={(v) => set(s.key, "enabled", v)}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div
+              className={`grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 ${
+                disabled ? "opacity-40 pointer-events-none" : ""
+              }`}
+            >
+              {s.fields.map((fld) => {
+                if (fld.type === "base") {
+                  return (
+                    <Field key={fld.k} label={fld.label}>
+                      <select
+                        value={state[fld.k]}
+                        onChange={(e) => set(s.key, fld.k, e.target.value)}
+                        className="input-base"
+                      >
+                        <option value="basic">Basic</option>
+                        <option value="gross">Gross</option>
+                      </select>
+                    </Field>
+                  );
+                }
+                if (fld.type === "amountOrNull") {
+                  const capped = state[fld.k] !== null;
+                  return (
+                    <Field key={fld.k} label={fld.label}>
+                      <label className="flex items-center gap-2 mb-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={capped}
+                          onChange={(e) =>
+                            set(
+                              s.key,
+                              fld.k,
+                              e.target.checked
+                                ? (defaults[s.key]?.[fld.k] ?? 0)
+                                : null,
+                            )
+                          }
+                          className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                        />
+                        <span className="text-xs text-gray-600">
+                          {fld.capLabel}
+                        </span>
+                      </label>
+                      {capped ? (
+                        <input
+                          type="number"
+                          min="0"
+                          value={state[fld.k] ?? ""}
+                          onChange={(e) =>
+                            set(
+                              s.key,
+                              fld.k,
+                              e.target.value === "" ? "" : Number(e.target.value),
+                            )
+                          }
+                          className="input-base"
+                        />
+                      ) : (
+                        <p className="text-xs text-gray-400 italic py-2">
+                          Uncapped
+                        </p>
+                      )}
+                    </Field>
+                  );
+                }
+                // text / rate / positiveNumber
+                const isNum = fld.type === "rate" || fld.type === "positiveNumber";
+                return (
+                  <Field key={fld.k} label={fld.label}>
+                    <input
+                      type={isNum ? "number" : "text"}
+                      step={fld.type === "rate" ? "0.01" : "1"}
+                      min={isNum ? "0" : undefined}
+                      value={state[fld.k]}
+                      onChange={(e) => set(s.key, fld.k, e.target.value)}
+                      className="input-base"
+                    />
+                  </Field>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+
+      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+        <button
+          onClick={resetToDefaults}
+          disabled={saving || !isCustom}
+          className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50 transition disabled:opacity-40"
+        >
+          <RotateCcw size={13} /> Reset to India defaults
+        </button>
+        <div className="flex items-center gap-3">
+          {dirty && (
+            <span className="text-xs text-amber-600 font-medium flex items-center gap-1">
+              <AlertCircle size={12} /> Unsaved changes
+            </span>
+          )}
+          <button
+            onClick={save}
+            disabled={saving || !dirty}
+            className="btn-primary disabled:opacity-40"
+          >
+            {saving ? (
+              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Save size={15} />
+            )}
+            Save Rules
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── MAIN PAGE ───────────────────────────────────────────────────────────────
 
 const TABS = [
   { id: "profile", label: "Company Profile", icon: Building2 },
   { id: "payroll", label: "Payroll Config", icon: IndianRupee },
+  { id: "statutory", label: "Statutory Rules", icon: Landmark },
   { id: "holidays", label: "Holidays", icon: Calendar },
   { id: "pt", label: "PT Slabs", icon: IndianRupee },
   { id: "structure", label: "Structure", icon: Layers },
@@ -1319,6 +1732,7 @@ export default function CompanySettings() {
         {activeTab === "payroll" && (
           <PayrollConfigTab company={company} onSaved={fetchCompany} />
         )}
+        {activeTab === "statutory" && <StatutoryConfigTab />}
         {activeTab === "holidays" && (
           <HolidaysTab company={company} onSaved={fetchCompany} />
         )}
