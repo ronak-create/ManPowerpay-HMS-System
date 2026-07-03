@@ -20,9 +20,20 @@ Client decisions: multi-tenant (shared-DB **auto-scoping**), generic/configurabl
    Admin API: `GET/PUT /api/company/statutory-config`. Golden-master parity preserved (15
    snapshots unchanged) + 13 new tests (`tests/payroll.statutory.test.js`). 28 tests pass.
    *Frontend UI to edit the config is still TODO (goes with the settings screen).*
-2. **Razorpay** — BLOCKED on user providing Razorpay key/secret + webhook secret. Build checkout + signature-verified webhooks on the existing Subscription/PaymentEvent models.
-3. **Frontend billing/upgrade UI** (against `GET /api/billing`) + per-tenant branding + statutory-config editor.
-4. Lower priority: refresh-token/HttpOnly-cookie auth, wider Zod coverage.
+2. ~~**Frontend statutory-config editor**~~ — **DONE.** New "Statutory Rules" tab in
+   Company Settings (`CompanySettings.jsx` → `StatutoryConfigTab`) against
+   `GET/PUT /api/company/statutory-config`. Seeds from the effective config, saves only
+   the diff vs India defaults, per-scheme enable toggles, reset-to-defaults.
+3. ~~**Frontend billing/upgrade UI**~~ — **DONE.** `pages/admin/Billing.jsx` (route
+   `/admin/billing` + sidebar link) against `GET /api/billing`: current plan, usage bar,
+   plan grid. Upgrade CTAs are soft-gated (Razorpay pending) — they show a "contact
+   support" toast + a gateway-pending notice instead of a dead button.
+4. **Razorpay** — BLOCKED on user's Razorpay key/secret + webhook secret (PAN
+   verification in progress). Build checkout + signature-verified webhooks on the
+   existing Subscription/PaymentEvent models, then swap the Billing page's
+   `handleUpgrade` soft-gate for a real checkout call.
+5. Remaining: per-tenant branding. Lower priority: refresh-token/HttpOnly-cookie
+   auth, wider Zod coverage.
 
 ## How to resume / verify
 - Backend env comes from `backend/.env.production` (DB creds still work; user is migrating to a new **Supabase Mumbai** project — then run `npx prisma migrate deploy`).
