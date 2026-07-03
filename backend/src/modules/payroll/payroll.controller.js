@@ -99,7 +99,8 @@ export const createPayrollRun = asyncHandler(async (req, res) => {
         taxDeductedSoFar,
         remainingMonths
       },
-      advanceEmi
+      advanceEmi,
+      statutoryConfig: company.statutoryConfig // null → India defaults
     });
 
     // Omit fields not in the Payslip database model (like basicPayable)

@@ -122,6 +122,7 @@ model Company {
   workingDaysBase  Int      @default(26) // 26 or calendar days
   otMultiplier     Float    @default(2.0)
   financialYearStart Int    @default(4)  // April = 4
+  statutoryConfig  Json?    // jurisdiction rules override; null = India defaults (see payroll.statutory.js)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

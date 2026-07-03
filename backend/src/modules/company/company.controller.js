@@ -7,6 +7,7 @@ import path from 'path';
 import { logAudit } from '../../utils/auditLog.js';
 import { createNotification } from '../../utils/notify.js';
 import { saveFile, getBuffer } from '../../lib/storage.js';
+import { resolveStatutoryConfig, sanitizeStatutoryConfig, INDIA_STATUTORY_CONFIG } from '../payroll/payroll.statutory.js';
 
 // GET /api/company
 export const getCompany = asyncHandler(async (req, res) => {
@@ -57,6 +58,40 @@ export const getLogo = asyncHandler(async (req, res) => {
   res.setHeader('Content-Type', type);
   res.setHeader('Cache-Control', 'public, max-age=300');
   res.send(buf);
+});
+
+// GET /api/company/statutory-config — effective payroll statutory rules
+export const getStatutoryConfig = asyncHandler(async (req, res) => {
+  const company = await prisma.company.findFirst({ select: { id: true, statutoryConfig: true } });
+  if (!company) throw new ApiError(404, 'Company not configured');
+  res.json(new ApiResponse(200, {
+    isCustom: !!company.statutoryConfig,
+    overrides: company.statutoryConfig || null,
+    effective: resolveStatutoryConfig(company.statutoryConfig),
+    defaults: INDIA_STATUTORY_CONFIG,
+  }));
+});
+
+// PUT /api/company/statutory-config — replace the jurisdiction-rules override
+export const updateStatutoryConfig = asyncHandler(async (req, res) => {
+  const { config, errors } = sanitizeStatutoryConfig(req.body?.statutoryConfig ?? req.body);
+  if (errors.length) throw new ApiError(400, `Invalid statutory config: ${errors.join('; ')}`);
+
+  const company = await prisma.company.findFirst({ select: { id: true } });
+  if (!company) throw new ApiError(404, 'Company not configured');
+
+  const updated = await prisma.company.update({
+    where: { id: company.id },
+    data: { statutoryConfig: config }, // null resets to India defaults
+    select: { statutoryConfig: true },
+  });
+
+  await logAudit({ userId: req.user.id, action: 'UPDATE', entity: 'company', entityId: company.id, newValue: { statutoryConfig: config } });
+  res.json(new ApiResponse(200, {
+    isCustom: !!updated.statutoryConfig,
+    overrides: updated.statutoryConfig,
+    effective: resolveStatutoryConfig(updated.statutoryConfig),
+  }, config ? 'Statutory config updated' : 'Statutory config reset to defaults'));
 });
 
 // POST /api/company/holidays — Add holiday

@@ -12,9 +12,16 @@ Client decisions: multi-tenant (shared-DB **auto-scoping**), generic/configurabl
   - Billing: `Plan`/`Subscription`/`PaymentEvent` models, `lib/plan.js` limit enforcement (402), `GET /api/billing`. Plans seeded: free(10)/starter(50)/growth(500).
 
 ## Next up (Phase 2 remaining)
-1. **Generic configurable payroll engine** — no external deps; do with golden-master parity vs current engine. *Good first task next session.*
+1. ~~**Generic configurable payroll engine**~~ — **DONE.** Engine is now config-driven via
+   `src/modules/payroll/payroll.statutory.js` (`INDIA_STATUTORY_CONFIG` default +
+   `resolveStatutoryConfig`/`sanitizeStatutoryConfig`). EPF/ESIC/OT/TDS rates, ceilings,
+   thresholds, labels and enable-flags are all overridable per tenant via the new nullable
+   `Company.statutoryConfig` JSON column (migration `20260703150000_company_statutory_config`).
+   Admin API: `GET/PUT /api/company/statutory-config`. Golden-master parity preserved (15
+   snapshots unchanged) + 13 new tests (`tests/payroll.statutory.test.js`). 28 tests pass.
+   *Frontend UI to edit the config is still TODO (goes with the settings screen).*
 2. **Razorpay** — BLOCKED on user providing Razorpay key/secret + webhook secret. Build checkout + signature-verified webhooks on the existing Subscription/PaymentEvent models.
-3. **Frontend billing/upgrade UI** (against `GET /api/billing`) + per-tenant branding.
+3. **Frontend billing/upgrade UI** (against `GET /api/billing`) + per-tenant branding + statutory-config editor.
 4. Lower priority: refresh-token/HttpOnly-cookie auth, wider Zod coverage.
 
 ## How to resume / verify

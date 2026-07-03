@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { getCompany, updateCompany, uploadLogo, getLogo, addHoliday, deleteHoliday, updatePTSlabs, addSite, deleteSite, addDepartment, deleteDepartment, createAdvanceLoan, listAdvanceLoans } from './company.controller.js';
+import { getCompany, updateCompany, uploadLogo, getLogo, addHoliday, deleteHoliday, updatePTSlabs, addSite, deleteSite, addDepartment, deleteDepartment, createAdvanceLoan, listAdvanceLoans, getStatutoryConfig, updateStatutoryConfig } from './company.controller.js';
 import { verifyJWT } from '../../middleware/auth.js';
 import { requireRole } from '../../middleware/roles.js';
 import { imageFileFilter } from '../../utils/uploads.js';
@@ -21,6 +21,8 @@ router.post('/logo', requireRole('admin'), upload.single('logo'), uploadLogo);
 router.post('/holidays', requireRole('admin'), addHoliday);
 router.delete('/holidays/:id', requireRole('admin'), deleteHoliday);
 router.put('/pt-slabs', requireRole('admin'), updatePTSlabs);
+router.get('/statutory-config', getStatutoryConfig);
+router.put('/statutory-config', requireRole('admin'), updateStatutoryConfig);
 router.post('/sites', requireRole('admin'), addSite);
 router.delete('/sites/:id', requireRole('admin'), deleteSite);
 router.post('/departments', requireRole('admin'), addDepartment);
