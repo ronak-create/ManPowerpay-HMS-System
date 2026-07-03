@@ -111,6 +111,7 @@ model Company {
   id               String   @id @default(cuid())
   name             String
   logoPath         String?
+  brandColor       String?  // hex accent color for tenant branding; null = platform default
   registeredAddress String
   gstin            String?
   pan              String?

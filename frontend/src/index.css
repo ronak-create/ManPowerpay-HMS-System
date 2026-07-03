@@ -6,6 +6,12 @@
 @layer base {
   *, *::before, *::after { box-sizing: border-box; }
 
+  /* Per-tenant accent color; overridden at runtime by utils/branding.js. */
+  :root {
+    --brand: #D97706;
+    --brand-dark: #B45309;
+  }
+
   html {
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
@@ -97,11 +103,12 @@
   }
   .btn-primary {
     @apply btn px-4 py-2.5 text-sm text-white;
-    background: linear-gradient(135deg, #B45309 0%, #D97706 100%);
+    background: linear-gradient(135deg, var(--brand-dark, #B45309) 0%, var(--brand, #D97706) 100%);
     box-shadow: 0 2px 8px rgba(217,119,6,.3);
   }
   .btn-primary:hover:not(:disabled) {
-    background: linear-gradient(135deg, #92400E 0%, #B45309 100%);
+    background: linear-gradient(135deg, var(--brand-dark, #92400E) 0%, var(--brand-dark, #B45309) 100%);
+    filter: brightness(0.94);
     box-shadow: 0 4px 14px rgba(217,119,6,.4);
     transform: translateY(-1px);
   }

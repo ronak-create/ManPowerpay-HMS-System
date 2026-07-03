@@ -19,6 +19,8 @@ import {
 import toast from "react-hot-toast";
 import { format } from "date-fns";
 import api from "../../api/axios";
+import useAuthStore from "../../store/authStore";
+import { companyLogoUrl, DEFAULT_BRAND } from "../../utils/branding";
 
 // ─── Reusable Field ──────────────────────────────────────────────────────────
 
@@ -41,6 +43,8 @@ function CompanyProfileTab({ company, onSaved }) {
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -51,20 +55,31 @@ function CompanyProfileTab({ company, onSaved }) {
       epfCode: company.epfCode || "",
       esicCode: company.esicCode || "",
       ptState: company.ptState || "Gujarat",
+      brandColor: company.brandColor || "",
     },
   });
+  const setCompany = useAuthStore((s) => s.setCompany);
   const [saving, setSaving] = useState(false);
-  const apiBase = import.meta.env.VITE_API_URL || "/api";
   const [logoPreview, setLogoPreview] = useState(
-    company.logoPath ? `${apiBase}/company/logo?t=${Date.now()}` : null,
+    company.logoPath ? `${companyLogoUrl(company.id)}?t=${Date.now()}` : null,
   );
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const fileRef = useRef();
 
+  const brandColor = watch("brandColor");
+
   const onSubmit = async (data) => {
     setSaving(true);
     try {
-      await api.put("/company", data);
+      const res = await api.put("/company", data);
+      const saved = res.data?.data || {};
+      // Re-theme the running app immediately with the new branding.
+      setCompany({
+        id: company.id,
+        name: saved.name ?? data.name,
+        logoPath: saved.logoPath ?? company.logoPath,
+        brandColor: saved.brandColor ?? (data.brandColor || null),
+      });
       toast.success("Company profile saved");
       onSaved();
     } catch (err) {
@@ -85,10 +100,17 @@ function CompanyProfileTab({ company, onSaved }) {
     try {
       const form = new FormData();
       form.append("logo", file);
-      await api.post("/company/logo", form, {
+      const res = await api.post("/company/logo", form, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setLogoPreview(URL.createObjectURL(file));
+      // Reflect the new logo in the app chrome right away.
+      setCompany({
+        id: company.id,
+        name: company.name,
+        logoPath: res.data?.data?.logoPath ?? company.logoPath,
+        brandColor: brandColor || company.brandColor || null,
+      });
       toast.success("Logo uploaded");
     } catch {
       toast.error("Logo upload failed");
@@ -250,6 +272,44 @@ function CompanyProfileTab({ company, onSaved }) {
               </option>
             ))}
           </select>
+        </Field>
+
+        <Field
+          label="Brand Color"
+          hint="Accent used across your team's dashboard and logo tile"
+        >
+          <div className="flex items-center gap-3">
+            <input
+              type="color"
+              value={brandColor || DEFAULT_BRAND}
+              onChange={(e) => setValue("brandColor", e.target.value)}
+              className="w-11 h-10 rounded-lg border border-gray-200 bg-white p-1 cursor-pointer flex-shrink-0"
+              aria-label="Pick brand color"
+            />
+            <input
+              {...register("brandColor", {
+                pattern: {
+                  value: /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/,
+                  message: "Use a hex color like #D97706",
+                },
+              })}
+              className={`input-base font-mono flex-1 ${errors.brandColor ? "input-error" : ""}`}
+              placeholder={DEFAULT_BRAND}
+              maxLength={7}
+            />
+            {brandColor && (
+              <button
+                type="button"
+                onClick={() => setValue("brandColor", "")}
+                className="text-xs font-semibold text-gray-500 hover:text-gray-700 flex-shrink-0"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+          {errors.brandColor && (
+            <p className="text-red-500 text-xs mt-1.5">⚠ {errors.brandColor.message}</p>
+          )}
         </Field>
       </div>
 

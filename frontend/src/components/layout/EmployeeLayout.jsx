@@ -6,6 +6,9 @@ import {
 import useAuthStore from '../../store/authStore';
 import MobileSidebar from './MobileSidebar';
 import NotificationBell from './NotificationBell';
+import { companyLogoUrl } from '../../utils/branding';
+
+const BRAND_GRADIENT = 'linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%)';
 
 const navGroups = [
   {
@@ -34,19 +37,31 @@ const navGroups = [
   },
 ];
 
-function SidebarContent({ user, logout, navigate, location, onNavClick }) {
+function SidebarContent({ user, company, logout, navigate, location, onNavClick }) {
+  const logo = company?.logoPath ? companyLogoUrl(company.id) : null;
+  const brandName = company?.name || 'ManpowerPay';
   return (
     <>
-      {/* Logo */}
+      {/* Logo / brand */}
       <div className="px-5 pt-6 pb-5">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 shadow-inner"
-               style={{ background: 'linear-gradient(135deg, #B45309 0%, #F59E0B 100%)' }}>
-            <span className="text-white font-bold text-sm tracking-tight">MP</span>
-          </div>
-          <div>
-            <div className="text-white font-semibold text-sm leading-tight tracking-tight">ManpowerPay</div>
-            <div className="text-zinc-400 text-[10px] uppercase tracking-widest font-medium">HMS Platform</div>
+          {logo ? (
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-white overflow-hidden shadow-inner">
+              <img src={logo} alt={brandName} className="w-full h-full object-contain p-0.5" />
+            </div>
+          ) : (
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 shadow-inner"
+                 style={{ background: BRAND_GRADIENT }}>
+              <span className="text-white font-bold text-sm tracking-tight">
+                {brandName.slice(0, 2).toUpperCase()}
+              </span>
+            </div>
+          )}
+          <div className="min-w-0">
+            <div className="text-white font-semibold text-sm leading-tight tracking-tight truncate">{brandName}</div>
+            <div className="text-zinc-400 text-[10px] uppercase tracking-widest font-medium">
+              {company?.name ? 'Powered by ManpowerPay' : 'HMS Platform'}
+            </div>
           </div>
         </div>
       </div>
@@ -58,7 +73,7 @@ function SidebarContent({ user, logout, navigate, location, onNavClick }) {
       <div className="mx-3 mb-4 rounded-xl p-2.5 flex items-center gap-2.5"
            style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.06)' }}>
         <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white font-semibold text-xs flex-shrink-0"
-             style={{ background: 'linear-gradient(135deg, #D97706, #F59E0B)' }}>
+             style={{ background: BRAND_GRADIENT }}>
           {user?.name?.[0]?.toUpperCase()}
         </div>
         <div className="min-w-0 flex-1">
@@ -111,7 +126,7 @@ function SidebarContent({ user, logout, navigate, location, onNavClick }) {
 }
 
 export default function EmployeeLayout() {
-  const { user, logout } = useAuthStore();
+  const { user, company, logout } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -121,7 +136,7 @@ export default function EmployeeLayout() {
     i.end ? location.pathname === i.to : location.pathname.startsWith(i.to)
   );
 
-  const sidebarProps = { user, logout, navigate, location, onNavClick: () => setMobileOpen(false) };
+  const sidebarProps = { user, company, logout, navigate, location, onNavClick: () => setMobileOpen(false) };
 
   return (
     <div className="flex h-screen bg-[#FAFAF8] overflow-hidden">
@@ -150,7 +165,7 @@ export default function EmployeeLayout() {
           {/* Breadcrumb / page title */}
           <div className="flex-1 min-w-0 flex items-center gap-2">
             <div className="hidden sm:flex items-center gap-1.5 text-xs text-zinc-400 font-medium">
-              <span>ManpowerPay</span>
+              <span className="truncate max-w-[160px]">{company?.name || 'ManpowerPay'}</span>
               <ChevronRight size={12} />
             </div>
             <h2 className="font-semibold text-zinc-800 text-sm truncate">{current?.label || 'Dashboard'}</h2>
@@ -159,7 +174,7 @@ export default function EmployeeLayout() {
           <div className="flex items-center gap-1.5">
             <NotificationBell />
             <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-semibold text-xs flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
-                 style={{ background: 'linear-gradient(135deg, #D97706, #F59E0B)' }}
+                 style={{ background: BRAND_GRADIENT }}
                  title={user?.name}>
               {user?.name?.[0]?.toUpperCase()}
             </div>

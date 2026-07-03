@@ -18,8 +18,8 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const res = await api.post('/auth/login', data);
-      const { token, user } = res.data.data;
-      login(user, token);
+      const { token, user, company } = res.data.data;
+      login(user, token, company);
       toast.success(`Welcome, ${user.name}!`);
       if (user.passwordResetRequired) {
         navigate('/change-password');

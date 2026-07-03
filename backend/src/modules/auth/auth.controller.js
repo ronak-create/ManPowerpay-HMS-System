@@ -8,6 +8,16 @@ import asyncHandler from '../../utils/asyncHandler.js';
 import { logAudit } from '../../utils/auditLog.js';
 import { sendOtpEmail } from '../../utils/mailer.js';
 
+// Branding block sent to the client so the app chrome can render tenant identity
+// (name, logo, accent color) without a second round-trip.
+async function companyBranding(companyId) {
+  if (!companyId) return null;
+  return prisma.company.findUnique({
+    where: { id: companyId },
+    select: { id: true, name: true, logoPath: true, brandColor: true },
+  });
+}
+
 // POST /api/auth/login
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
@@ -39,7 +49,8 @@ export const login = asyncHandler(async (req, res) => {
 
   res.json(new ApiResponse(200, {
     token,
-    user: { id: user.id, name: user.name, email: user.email, role: user.role, passwordResetRequired: user.passwordResetRequired }
+    user: { id: user.id, name: user.name, email: user.email, role: user.role, passwordResetRequired: user.passwordResetRequired },
+    company: await companyBranding(user.companyId),
   }, 'Login successful'));
 });
 
@@ -164,7 +175,7 @@ export const getMe = asyncHandler(async (req, res) => {
   if (user.role === 'employee') {
     extra.employee = await prisma.employee.findUnique({ where: { userId: user.id }, include: { site: true, department: true } });
   }
-  res.json(new ApiResponse(200, { id: user.id, name: user.name, email: user.email, role: user.role, passwordResetRequired: user.passwordResetRequired, ...extra }));
+  res.json(new ApiResponse(200, { id: user.id, name: user.name, email: user.email, role: user.role, passwordResetRequired: user.passwordResetRequired, company: await companyBranding(user.companyId), ...extra }));
 });
 
 // POST /api/auth/change-password

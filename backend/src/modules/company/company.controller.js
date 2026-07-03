@@ -25,12 +25,22 @@ export const getCompany = asyncHandler(async (req, res) => {
 
 // PUT /api/company
 export const updateCompany = asyncHandler(async (req, res) => {
-  const { name, registeredAddress, gstin, pan, epfCode, esicCode, ptState, payrollCycleDay, workingDaysBase, otMultiplier, financialYearStart } = req.body;
+  const { name, registeredAddress, gstin, pan, epfCode, esicCode, ptState, payrollCycleDay, workingDaysBase, otMultiplier, financialYearStart, brandColor } = req.body;
   const company = await prisma.company.findFirst();
+
+  // Accept a #RGB / #RRGGBB hex, empty string clears the override, undefined leaves it as-is.
+  let brand;
+  if (brandColor !== undefined) {
+    const trimmed = (brandColor || '').trim();
+    if (trimmed && !/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(trimmed)) {
+      throw new ApiError(400, 'Brand color must be a hex value like #D97706');
+    }
+    brand = trimmed || null;
+  }
 
   const updated = await prisma.company.update({
     where: { id: company.id },
-    data: { name, registeredAddress, gstin, pan, epfCode, esicCode, ptState, payrollCycleDay: Number(payrollCycleDay), workingDaysBase: Number(workingDaysBase), otMultiplier: Number(otMultiplier), financialYearStart: Number(financialYearStart) }
+    data: { name, registeredAddress, gstin, pan, epfCode, esicCode, ptState, payrollCycleDay: Number(payrollCycleDay), workingDaysBase: Number(workingDaysBase), otMultiplier: Number(otMultiplier), financialYearStart: Number(financialYearStart), ...(brandColor !== undefined ? { brandColor: brand } : {}) }
   });
 
   await logAudit({ userId: req.user.id, action: 'UPDATE', entity: 'company', entityId: company.id, newValue: req.body });
@@ -47,9 +57,16 @@ export const uploadLogo = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, { logoPath: key }, 'Logo uploaded'));
 });
 
-// GET /api/company/logo — Public: stream the current company logo from storage
+// GET /api/company/:companyId/logo — Public: stream a specific company's logo.
+// Keyed by id (which the client already knows from its own branding payload) so
+// that, in the shared-DB multi-tenant setup, one tenant can never be served
+// another tenant's logo. The legacy no-id route falls back to findFirst for
+// single-tenant deployments.
 export const getLogo = asyncHandler(async (req, res) => {
-  const company = await prisma.company.findFirst({ select: { logoPath: true } });
+  const { companyId } = req.params;
+  const company = companyId
+    ? await prisma.company.findUnique({ where: { id: companyId }, select: { logoPath: true } })
+    : await prisma.company.findFirst({ select: { logoPath: true } });
   if (!company?.logoPath) throw new ApiError(404, 'No logo set');
   const buf = await getBuffer(company.logoPath);
   if (!buf) throw new ApiError(404, 'Logo not found');

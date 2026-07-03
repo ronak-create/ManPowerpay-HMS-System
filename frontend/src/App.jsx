@@ -56,7 +56,7 @@ function AppInit() {
     }
     api
       .get("/auth/me")
-      .then((r) => login(r.data.data, token))
+      .then((r) => login(r.data.data, token, r.data.data.company))
       .catch((err) => {
         if (err.response?.status === 401) logout();
         else setAuthReady(); // keep credentials on network error

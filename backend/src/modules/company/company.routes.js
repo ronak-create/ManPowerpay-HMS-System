@@ -11,7 +11,9 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 *
 const router = Router();
 
 // Public: logo is rendered in <img> tags which can't send an auth header.
+// The id-keyed route is tenant-safe; the bare route stays for single-tenant use.
 router.get('/logo', getLogo);
+router.get('/:companyId/logo', getLogo);
 
 router.use(verifyJWT);
 
