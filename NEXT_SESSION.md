@@ -28,12 +28,18 @@ Client decisions: multi-tenant (shared-DB **auto-scoping**), generic/configurabl
    `/admin/billing` + sidebar link) against `GET /api/billing`: current plan, usage bar,
    plan grid. Upgrade CTAs are soft-gated (Razorpay pending) — they show a "contact
    support" toast + a gateway-pending notice instead of a dead button.
-4. **Razorpay** — BLOCKED on user's Razorpay key/secret + webhook secret (PAN
-   verification in progress). Build checkout + signature-verified webhooks on the
-   existing Subscription/PaymentEvent models, then swap the Billing page's
-   `handleUpgrade` soft-gate for a real checkout call.
-5. Remaining: per-tenant branding. Lower priority: refresh-token/HttpOnly-cookie
-   auth, wider Zod coverage.
+4. ~~**Per-tenant branding**~~ — **DONE.** Nullable `Company.brandColor` (migration
+   `20260703160000_company_brand_color`); login + `/auth/me` return a
+   `{ id, name, logoPath, brandColor }` block; `utils/branding.js` drives `--brand`
+   CSS vars (btn-primary + sidebar/topbar tiles read them); sidebars show tenant
+   logo/name; color picker in Company Settings → Profile. Also fixed a cross-tenant
+   logo leak — new id-keyed `GET /api/company/:companyId/logo`.
+5. **Razorpay** — BLOCKED on user's Razorpay key/secret + webhook secret (PAN
+   verification in progress; expected next day). Build checkout + signature-verified
+   webhooks on the existing Subscription/PaymentEvent models, then swap the Billing
+   page's `handleUpgrade` soft-gate for a real checkout call. **This is the only
+   remaining Phase 2 item.**
+6. Lower priority: refresh-token/HttpOnly-cookie auth, wider Zod coverage.
 
 ## How to resume / verify
 - Backend env comes from `backend/.env.production` (DB creds still work; user is migrating to a new **Supabase Mumbai** project — then run `npx prisma migrate deploy`).
