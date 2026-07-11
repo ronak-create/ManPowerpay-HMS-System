@@ -4,6 +4,9 @@ import { useEffect } from "react";
 import api from "./api/axios";
 import useAuthStore from "./store/authStore";
 
+// Public
+import LandingPage from "./pages/LandingPage";
+
 // Auth
 import LoginPage from "./pages/auth/LoginPage";
 import SignupPage from "./pages/auth/SignupPage";
@@ -73,6 +76,7 @@ export default function App() {
       <AppInit />
       <Toaster position="top-right" />
       <Routes>
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -119,7 +123,7 @@ export default function App() {
           <Route path="docs" element={<Documentation />} />
         </Route>
 
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
         <Route
           path="/unauthorized"
           element={
