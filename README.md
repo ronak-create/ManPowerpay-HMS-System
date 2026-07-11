@@ -219,34 +219,15 @@ http://localhost:5173
 
 ---
 
-## Default Credentials
+## Credentials
 
-> These are demo credentials for local development.
-
-| Role       | Email                                                 | Password        |
-| ---------- | ----------------------------------------------------- | --------------- |
-| Admin      | [admin@manpowerpay.com](mailto:admin@manpowerpay.com) | Admin@1234      |
-| Supervisor | Created by Admin                                      | Supervisor@1234 |
-| Employee   | Created by Admin                                      | Welcome@1234    |
+There are no hard-coded demo credentials. The seed (`npm run db:seed`) creates the platform admin from the `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` / `SEED_ADMIN_MOBILE` env vars. New companies self-register at `/signup`; employees receive one-time temporary passwords when created and must reset on first login.
 
 ---
 
 ## Environment Variables
 
-Example `.env` configuration:
-
-```env
-DATABASE_URL="postgresql://username:password@localhost:5432/manpowerpay"
-
-JWT_SECRET=your_super_secret_key
-
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your_email
-SMTP_PASS=your_password
-
-FRONTEND_URL=http://localhost:5173
-```
+Every variable is documented with comments in [`backend/.env.example`](backend/.env.example) — copy it to `backend/.env` and fill it in. Highlights: `DATABASE_URL`/`DIRECT_URL` (Postgres), `JWT_SECRET`, `ENCRYPTION_KEY` (PII encryption at rest), SMTP, and optional `RAZORPAY_*` (billing) and `SUPABASE_*` (file storage) — the optional integrations stay dormant until configured.
 
 ---
 
@@ -334,6 +315,19 @@ ManpowerPay HMS includes:
 
 ---
 
+## Multi-Tenant SaaS
+
+The platform is multi-tenant: one deployment serves many companies with strict per-company data isolation (enforced automatically at the ORM layer).
+
+* Self-serve company signup (`/signup`) with free / starter / growth plans
+* Razorpay subscription billing with employee-limit enforcement
+* Per-company statutory configuration (EPF/ESIC/PT/TDS rates, ceilings, toggles)
+* Per-company branding (logo, accent color) across the app
+
+## Deployment
+
+See [`DEPLOYMENT.md`](DEPLOYMENT.md) for the full production runbook (Supabase + Render + Vercel + Razorpay). CI runs the backend test suite and frontend build on every push (`.github/workflows/ci.yml`).
+
 ## Future Improvements
 
 * Mobile App
@@ -341,7 +335,6 @@ ManpowerPay HMS includes:
 * WhatsApp Notifications
 * Bank Salary Transfer Automation
 * Advanced Analytics Dashboard
-* Multi-company Support
 
 ---
 

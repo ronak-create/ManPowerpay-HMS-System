@@ -20,7 +20,10 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: backend/package-lock.json
-      - run: npm ci
+      # npm install, not npm ci: the lockfile is generated on Windows and npm
+      # omits deps of platform-filtered optional packages (vitest wasm
+      # bindings), which npm ci on Linux rejects as out-of-sync.
+      - run: npm install --no-audit --no-fund
       - run: npm test
 
   frontend:
