@@ -26,6 +26,7 @@ import salaryTemplateRoutes from "./modules/payroll/salaryTemplate.routes.js";
 import notificationRoutes from "./modules/notifications/notification.routes.js";
 import resignationRoutes from "./modules/resignations/resignation.routes.js";
 import billingRoutes from "./modules/billing/billing.routes.js";
+import { razorpayWebhook } from "./modules/billing/billing.controller.js";
 
 dotenv.config();
 
@@ -52,11 +53,23 @@ app.use(
   }),
 );
 
+// Razorpay webhook must see the raw body to verify the HMAC signature, so it is
+// mounted BEFORE the JSON parser. It's public (Razorpay calls it, no JWT).
+app.post(
+  "/api/billing/webhook",
+  express.raw({ type: "*/*" }),
+  razorpayWebhook,
+);
+
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(trimMiddleware);
 
 // Company logos are served via GET /api/company/logo (streamed from storage).
+
+// Lightweight liveness probe for the host (Render healthCheckPath). Registered
+// before the rate limiter so frequent probes are never throttled; no DB touch.
+app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes

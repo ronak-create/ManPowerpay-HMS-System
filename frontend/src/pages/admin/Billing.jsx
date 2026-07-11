@@ -17,6 +17,25 @@ const FEATURE_LABELS = {
   watermarkedPayslips: "Watermarked payslips",
 };
 
+// Lazily inject Razorpay's Checkout script once, resolving when it's ready.
+function loadRazorpayScript() {
+  return new Promise((resolve, reject) => {
+    if (window.Razorpay) return resolve();
+    const existing = document.getElementById("razorpay-checkout-js");
+    if (existing) {
+      existing.addEventListener("load", () => resolve());
+      existing.addEventListener("error", () => reject(new Error("script failed")));
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = "razorpay-checkout-js";
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Failed to load Razorpay"));
+    document.body.appendChild(script);
+  });
+}
+
 // Render a plan's feature set as a checklist. `watermarkedPayslips` is a
 // negative feature — absence of the watermark is the perk — so invert it.
 function planPerks(plan) {
@@ -34,22 +53,73 @@ function planPerks(plan) {
 export default function Billing() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [busyCode, setBusyCode] = useState(null);
 
-  useEffect(() => {
+  const loadBilling = () =>
     api
       .get("/billing")
       .then((res) => setData(res.data.data))
-      .catch(() => toast.error("Failed to load billing details"))
-      .finally(() => setLoading(false));
+      .catch(() => toast.error("Failed to load billing details"));
+
+  useEffect(() => {
+    loadBilling().finally(() => setLoading(false));
   }, []);
 
-  // Checkout is intentionally not wired yet — the Razorpay gateway is pending
-  // account verification. Surface a clear message instead of a dead button.
-  const handleUpgrade = () => {
-    toast(
-      "Online payments are being enabled. Contact support to change your plan.",
-      { icon: "💳", duration: 5000 },
-    );
+  // Start a plan change. Free plans switch server-side immediately; paid plans
+  // open Razorpay Checkout against a subscription created by the backend, then
+  // confirm the signed payment via /billing/verify.
+  const handleUpgrade = async (targetPlan) => {
+    setBusyCode(targetPlan.code);
+    try {
+      const { data: res } = await api.post("/billing/checkout", {
+        planCode: targetPlan.code,
+      });
+      const payload = res.data;
+
+      if (payload.free) {
+        toast.success("Switched to the free plan.");
+        await loadBilling();
+        return;
+      }
+
+      await loadRazorpayScript();
+      const rzp = new window.Razorpay({
+        key: payload.keyId,
+        subscription_id: payload.razorpaySubscriptionId,
+        name: "ManpowerPay",
+        description: `${payload.planName} plan`,
+        theme: { color: "#d97706" },
+        handler: async (response) => {
+          try {
+            await api.post("/billing/verify", {
+              ...response,
+              planCode: targetPlan.code,
+            });
+            toast.success(`You're now on the ${targetPlan.name} plan.`);
+            await loadBilling();
+          } catch {
+            toast.error(
+              "Payment succeeded but activation failed — contact support.",
+            );
+          }
+        },
+        modal: { ondismiss: () => setBusyCode(null) },
+      });
+      rzp.on("payment.failed", () => {
+        toast.error("Payment failed. Please try again.");
+        setBusyCode(null);
+      });
+      rzp.open();
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message || "Could not start checkout.";
+      toast.error(msg);
+      setBusyCode(null);
+    } finally {
+      // For the Razorpay path, busy is cleared by modal dismiss / handlers; the
+      // free-plan and error paths clear it here.
+      if (targetPlan.priceMonthly === 0) setBusyCode(null);
+    }
   };
 
   if (loading) {
@@ -231,15 +301,21 @@ export default function Billing() {
                 </ul>
 
                 <button
-                  onClick={handleUpgrade}
-                  disabled={isCurrent}
+                  onClick={() => handleUpgrade(p)}
+                  disabled={isCurrent || busyCode !== null}
                   className={`mt-5 w-full py-2.5 rounded-xl text-sm font-semibold transition ${
                     isCurrent
                       ? "bg-gray-100 text-gray-400 cursor-default"
-                      : "bg-amber-600 text-white hover:bg-amber-700"
+                      : "bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-60"
                   }`}
                 >
-                  {isCurrent ? "Current Plan" : "Choose Plan"}
+                  {isCurrent
+                    ? "Current Plan"
+                    : busyCode === p.code
+                      ? "Processing…"
+                      : p.priceMonthly === 0
+                        ? "Switch to Free"
+                        : "Choose Plan"}
                 </button>
               </div>
             );
@@ -247,14 +323,21 @@ export default function Billing() {
         </div>
       </div>
 
-      {/* Gateway-pending note */}
+      {/* Payment note */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-2.5 text-xs text-blue-800">
         <ShieldCheck size={15} className="flex-shrink-0 mt-0.5" />
-        <p>
-          Secure online payments (Razorpay) are being enabled for your account.
-          Until then, plan changes are handled by our support team — reach out
-          and we'll switch you over.
-        </p>
+        {data.gatewayConfigured ? (
+          <p>
+            Payments are processed securely by Razorpay. Your card and banking
+            details are never stored on our servers.
+          </p>
+        ) : (
+          <p>
+            Secure online payments (Razorpay) are being enabled for your
+            account. Until then, plan changes are handled by our support team —
+            reach out and we'll switch you over.
+          </p>
+        )}
       </div>
     </div>
   );

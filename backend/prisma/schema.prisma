@@ -159,6 +159,7 @@ model Plan {
   employeeLimit Int      @default(10)   // max active employees; null-ish via large number for unlimited
   features      Json     @default("{}") // feature flags
   isActive      Boolean  @default(true)
+  razorpayPlanId String? // cached Razorpay plan id (created lazily on first checkout)
   createdAt     DateTime @default(now())
 
   subscriptions Subscription[]

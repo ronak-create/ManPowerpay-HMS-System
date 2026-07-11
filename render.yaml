@@ -1,0 +1,74 @@
+# Render Blueprint for the ManpowerPay backend API (Express + Prisma).
+# The React frontend deploys separately (Vercel); this service is the API only.
+# Supabase is the Postgres DB + file storage — it does NOT run this server.
+#
+# To use: Render Dashboard → New → Blueprint → point at this repo. Render reads
+# this file, creates the service, and prompts for each `sync: false` secret.
+#
+# ── CRITICAL deploy notes ────────────────────────────────────────────────────
+# 1. CONNECTION STRINGS: Render's outbound network is IPv4-only, but Supabase's
+#    DIRECT host (db.<ref>.supabase.co) is IPv6-only — it will FAIL on Render
+#    (P1001) even though it works locally. Use the Supabase POOLER URLs from
+#    Dashboard → Connect:
+#      DATABASE_URL = "Transaction pooler"  (…pooler.supabase.com:6543, add ?pgbouncer=true)
+#      DIRECT_URL   = "Session pooler"       (…pooler.supabase.com:5432)  ← migrations use this
+# 2. EPHEMERAL DISK: Render wipes the local disk on every deploy/restart, so
+#    uploaded documents and generated payslip PDFs must go to Supabase Storage.
+#    Set SUPABASE_URL + SUPABASE_SERVICE_KEY and create the bucket (default
+#    name "manpowerpay") first, or files will disappear.
+# 3. CLIENT_URL must be your deployed frontend origin (CORS). After deploy, set
+#    the Razorpay dashboard webhook to  https://<this-service>.onrender.com/api/billing/webhook
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  - type: web
+    name: manpowerpay-api
+    runtime: node
+    region: singapore # closest Render region to India
+    plan: free
+    rootDir: backend
+    # migrate deploy runs here because free tier has no preDeployCommand; a failed
+    # migration correctly fails the build. On a paid plan, move it to
+    # `preDeployCommand: npx prisma migrate deploy` instead.
+    buildCommand: npm install && npx prisma migrate deploy && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # PORT is provided automatically by Render — do not set it.
+      - key: DATABASE_URL # Supabase Transaction pooler (IPv4) — see notes above
+        sync: false
+      - key: DIRECT_URL # Supabase Session pooler (IPv4) — used by prisma migrate
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 8h
+      - key: ENCRYPTION_KEY # 64 hex chars; if unset, PII encryption stays dormant
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: SUPABASE_URL # required — Render disk is ephemeral
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
+        value: manpowerpay
+      - key: CLIENT_URL # deployed frontend origin, for CORS
+        sync: false
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: MAIL_FROM
+        value: ManpowerPay HMS <noreply@manpowerpay.com>
