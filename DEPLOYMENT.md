@@ -37,6 +37,14 @@ SEED_ADMIN_EMAIL=... SEED_ADMIN_PASSWORD=... SEED_ADMIN_MOBILE=... npm run db:se
 
 The seed creates the billing plans (free/starter/growth), a default company, and the platform admin from the `SEED_ADMIN_*` env vars. There are no hard-coded credentials.
 
+Optionally seed a **public demo tenant** (a realistic "Acme Facilities" company with employees, attendance, leaves, advances and a locked payroll run) so the live site is self-explanatory:
+
+```bash
+SEED_DEMO_EMAIL=demo@yourdomain.com SEED_DEMO_PASSWORD='Demo@12345' npm run db:seed:demo
+```
+
+It is idempotent — it wipes and rebuilds only the `company_demo` tenant and never touches other data. The demo login is intentionally public; keep it isolated by tenant scoping and never point it at a real admin account.
+
 ## 2. Render (backend API)
 
 1. **Render Dashboard → New → Blueprint**, point it at this repo. Render reads `render.yaml`, creates the `manpowerpay-api` service, and prompts for every `sync: false` secret.
@@ -74,6 +82,24 @@ The seed creates the billing plans (free/starter/growth), a default company, and
 ## Smoke path after any deploy
 
 login → mark attendance → apply/approve leave → run payroll → download payslip. Also confirm `/api/health` and that a new signup (`/signup`) creates an isolated company.
+
+## Operations
+
+- **Audit-log retention:** schedule `npm run prune:audit` (in `backend/`) to run
+  **daily** — a Render Cron Job, host cron entry, or a scheduled GitHub Action. It
+  deletes `audit_logs` older than `AUDIT_LOG_RETENTION_DAYS` (default 365; `0`
+  disables) across all tenants and exits non-zero on failure.
+- **Backups & recovery objectives, retention schedule, restore drills:** see
+  `docs/BACKUP_AND_RETENTION_POLICY.md`.
+- **Tenant data export:** admins can download a full JSON/Excel archive from Company
+  Settings → Data Export (`GET /api/company/export`) — useful for backups and DPDP
+  data-portability requests.
+
+## Compliance
+
+- `docs/PRIVACY_POLICY.md` — publishable privacy notice (fill placeholders).
+- `docs/DPDP_COMPLIANCE.md` — DPDP Act 2023 mapping, sub-processor list, breach
+  runbook, and the pre-launch operator checklist.
 
 ## Notes
 

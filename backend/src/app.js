@@ -10,6 +10,7 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { trimMiddleware } from "./middleware/trim.js";
+import { initSentry, setupSentryErrorHandler } from "./lib/sentry.js";
 
 // Route imports
 import authRoutes from "./modules/auth/auth.routes.js";
@@ -29,6 +30,9 @@ import billingRoutes from "./modules/billing/billing.routes.js";
 import { razorpayWebhook } from "./modules/billing/billing.controller.js";
 
 dotenv.config();
+
+// Initialise error tracking before the app is built (dormant unless SENTRY_DSN set).
+initSentry();
 
 const app = express();
 
@@ -109,6 +113,9 @@ if (process.env.NODE_ENV === "production") {
     res.sendFile(join(__dirname, "../../frontend/dist/index.html"));
   });
 }
+
+// Sentry's error handler must run after routes and before our own (no-op if dormant).
+setupSentryErrorHandler(app);
 
 app.use(errorHandler);
 

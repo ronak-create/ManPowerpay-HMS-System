@@ -47,7 +47,7 @@ class ErrorBoundary extends React.Component {
                 Try to recover session
               </Button>
             </div>
-            {process.env.NODE_ENV === 'development' && (
+            {import.meta.env.DEV && (
               <div className="mt-8 text-left p-4 bg-gray-900 rounded-xl overflow-hidden">
                 <p className="text-xs font-mono text-red-400 break-all">{this.state.error?.toString()}</p>
               </div>

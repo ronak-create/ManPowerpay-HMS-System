@@ -278,6 +278,14 @@ npx prisma studio
 
 Open Prisma Studio
 
+```bash
+npm run db:seed:demo   # seed a realistic public demo tenant (Acme Facilities)
+npm run prune:audit    # delete audit logs older than AUDIT_LOG_RETENTION_DAYS
+npm run lint           # ESLint (flat config)
+npm run format         # Prettier --write
+npm test               # Vitest unit suite
+```
+
 ---
 
 ### Frontend
@@ -326,7 +334,15 @@ The platform is multi-tenant: one deployment serves many companies with strict p
 
 ## Deployment
 
-See [`DEPLOYMENT.md`](DEPLOYMENT.md) for the full production runbook (Supabase + Render + Vercel + Razorpay). CI runs the backend test suite and frontend build on every push (`.github/workflows/ci.yml`).
+See [`DEPLOYMENT.md`](DEPLOYMENT.md) for the full production runbook (Supabase + Render + Vercel + Razorpay). CI runs lint, the backend test suite, and the frontend build on every push (`.github/workflows/ci.yml`).
+
+## Documentation
+
+* [`docs/API.md`](docs/API.md) — REST API reference (auth, tenancy, all endpoints)
+* [`DEPLOYMENT.md`](DEPLOYMENT.md) — production runbook + operations (backups, audit pruning)
+* [`docs/PRIVACY_POLICY.md`](docs/PRIVACY_POLICY.md) — publishable privacy notice (template)
+* [`docs/DPDP_COMPLIANCE.md`](docs/DPDP_COMPLIANCE.md) — DPDP Act 2023 mapping + pre-launch checklist
+* [`docs/BACKUP_AND_RETENTION_POLICY.md`](docs/BACKUP_AND_RETENTION_POLICY.md) — backup, recovery & retention policy
 
 ## Future Improvements
 
