@@ -35,6 +35,7 @@ export default {
           dark:    '#991B1B',
         },
         surface:  '#FAFAF8',
+        neu:      '#F0EDE6', // warm ivory base for the neumorphic soft-UI theme
         sidebar:  '#18181B',
         'sidebar-hover': '#27272A',
         'sidebar-active': '#3F3F46',
@@ -79,6 +80,18 @@ export default {
         'amber-lg':   '0 8px 28px 0 rgba(217,119,6,.25)',
         'inner-top':  'inset 0 1px 0 0 rgba(255,255,255,.06)',
         'glow':       '0 0 0 3px rgba(217,119,6,.15)',
+
+        /* ── Neumorphic (soft UI) — warm ivory base #F0EDE6. Dual shadow:
+           warm taupe on the lower-right, warm-white highlight on the upper-left,
+           so surfaces read as extruded from (raised) or pressed into the page. ── */
+        'neu-sm':      '3px 3px 8px rgba(176,148,112,.26), -3px -3px 8px rgba(255,255,255,.85)',
+        'neu':         '6px 6px 16px rgba(176,148,112,.30), -6px -6px 16px rgba(255,255,255,.88)',
+        'neu-lg':      '11px 11px 28px rgba(176,148,112,.34), -10px -10px 26px rgba(255,255,255,.92)',
+        'neu-xl':      '20px 20px 48px rgba(176,148,112,.38), -16px -16px 40px rgba(255,255,255,.95)',
+        'neu-inset':   'inset 4px 4px 9px rgba(176,148,112,.30), inset -4px -4px 9px rgba(255,255,255,.85)',
+        'neu-pressed': 'inset 3px 3px 7px rgba(176,148,112,.34), inset -3px -3px 7px rgba(255,255,255,.82)',
+        /* raised surface that also carries the amber brand glow (primary buttons) */
+        'neu-amber':   '6px 6px 16px rgba(176,148,112,.30), -6px -6px 16px rgba(255,255,255,.7), 0 4px 14px rgba(217,119,6,.28)',
       },
       backgroundImage: {
         'gradient-amber':   'linear-gradient(135deg, #D97706 0%, #F59E0B 50%, #FBBF24 100%)',

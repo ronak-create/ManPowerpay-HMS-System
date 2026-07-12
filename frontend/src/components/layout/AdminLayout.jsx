@@ -154,7 +154,7 @@ export default function AdminLayout() {
   const sidebarProps = { user, company, logout, navigate, location, onNavClick: () => setMobileOpen(false) };
 
   return (
-    <div className="flex h-screen bg-[#FAFAF8] overflow-hidden">
+    <div className="flex h-screen bg-neu overflow-hidden">
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex w-60 flex-col flex-shrink-0 bg-sidebar-texture shadow-sidebar">
         <SidebarContent {...sidebarProps} />
@@ -168,8 +168,8 @@ export default function AdminLayout() {
       {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Topbar */}
-        <header className="h-14 bg-white/80 backdrop-blur-sm border-b border-zinc-100 flex items-center px-4 sm:px-6 gap-3 flex-shrink-0 z-40"
-                style={{ boxShadow: '0 1px 0 0 #F4F4F5' }}>
+        <header className="h-14 bg-neu/80 backdrop-blur-sm flex items-center px-4 sm:px-6 gap-3 flex-shrink-0 z-40"
+                style={{ boxShadow: '0 6px 16px -8px rgba(176,148,112,.4)' }}>
           <button
             onClick={() => setMobileOpen(true)}
             className="lg:hidden btn-icon text-zinc-400 hover:bg-zinc-100"

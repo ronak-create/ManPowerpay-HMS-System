@@ -209,7 +209,7 @@ function WaveBg() {
 function Nav() {
   const [open, setOpen] = useState(false);
   return (
-    <header className="fixed top-0 inset-x-0 z-50 border-b border-zinc-200/70 bg-white/80 backdrop-blur-md">
+    <header className="fixed top-0 inset-x-0 z-50 bg-neu/80 backdrop-blur-md" style={{ boxShadow: "0 8px 24px -16px rgba(176,148,112,.6)" }}>
       <nav className="max-w-[1600px] mx-auto px-6 lg:px-12 h-16 flex items-center justify-between">
         <Logo />
         <div className="hidden md:flex items-center gap-8">
@@ -310,7 +310,7 @@ function PayslipCard({ className = "" }) {
 
 function Hero() {
   return (
-    <section className="relative min-h-[100dvh] flex items-center pt-24 pb-16 overflow-hidden bg-gradient-to-b from-[#FBFAF8] to-white">
+    <section className="relative min-h-[100dvh] flex items-center pt-24 pb-16 overflow-hidden bg-gradient-to-b from-neu to-[#F4F1EA]">
       {/* Soft amber ambience */}
       <div
         className="absolute top-0 right-0 w-[36rem] h-[36rem] rounded-full pointer-events-none"
@@ -355,29 +355,33 @@ function Hero() {
         </div>
         <Reveal delay={200} className="lg:pl-6">
           <div className="relative">
-            {/* Soft product stage */}
-            <div className="relative rounded-3xl border border-primary-100 aspect-[4/5] overflow-hidden shadow-card-lift">
-              <img
-                src={IMG("1552664730-d307ca884978", 900, 1120)}
-                alt="Payroll team at work"
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-              <div
-                className="absolute inset-0"
-                style={{
-                  background:
-                    "linear-gradient(150deg, rgba(24,24,27,.12) 0%, rgba(180,83,9,.38) 100%)",
-                }}
-              />
-              <div className="absolute top-7 left-7 flex items-center gap-2 rounded-xl bg-white/95 backdrop-blur border border-white/60 px-3 py-2 shadow-card">
-                <ShieldCheck size={15} className="text-emerald-500" strokeWidth={2} />
-                <span className="text-xs font-medium text-zinc-700">Statutory compliant</span>
+            {/* Neumorphic product stage: the image sits inside a raised ivory
+                "pillow" so it reads as extruded from the surrounding surface. */}
+            <div className="relative rounded-[2rem] bg-neu p-3 shadow-neu-xl">
+              <div className="relative rounded-[1.5rem] aspect-[4/5] overflow-hidden">
+                <img
+                  src={IMG("1552664730-d307ca884978", 900, 1120)}
+                  alt="Payroll team at work"
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                {/* brand wash + recessed inner shadow (image reads as set into the pillow) */}
+                <div
+                  className="absolute inset-0 shadow-neu-inset"
+                  style={{
+                    background:
+                      "linear-gradient(150deg, rgba(24,24,27,.12) 0%, rgba(180,83,9,.38) 100%)",
+                  }}
+                />
+                <div className="absolute top-7 left-7 flex items-center gap-2 rounded-xl bg-neu px-3 py-2 shadow-neu-sm">
+                  <ShieldCheck size={15} className="text-emerald-500" strokeWidth={2} />
+                  <span className="text-xs font-medium text-zinc-700">Statutory compliant</span>
+                </div>
+                <div className="absolute bottom-7 left-7 flex items-center gap-2 rounded-xl bg-neu px-3 py-2 shadow-neu-sm">
+                  <Building2 size={15} className="text-primary-600" strokeWidth={2} />
+                  <span className="text-xs font-medium text-zinc-700">3 companies, 1 login</span>
+                </div>
+                <PayslipCard className="absolute bottom-7 right-7 rotate-[-3deg]" />
               </div>
-              <div className="absolute bottom-7 left-7 flex items-center gap-2 rounded-xl bg-white/95 backdrop-blur border border-white/60 px-3 py-2 shadow-card">
-                <Building2 size={15} className="text-primary-600" strokeWidth={2} />
-                <span className="text-xs font-medium text-zinc-700">3 companies, 1 login</span>
-              </div>
-              <PayslipCard className="absolute bottom-7 right-7 rotate-[-3deg]" />
             </div>
           </div>
         </Reveal>
@@ -394,11 +398,11 @@ function CapabilityBand() {
     { icon: BarChart3, title: "MIS & Form-16", sub: "Export-ready reports" },
   ];
   return (
-    <section className="bg-white border-y border-zinc-100">
+    <section className="bg-neu">
       <div className="max-w-[1600px] mx-auto px-6 lg:px-12 py-9 grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-8">
         {items.map((it) => (
           <div key={it.title} className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary-50 border border-primary-100 flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-neu shadow-neu-sm flex items-center justify-center flex-shrink-0">
               <it.icon size={18} className="text-primary-600" strokeWidth={2} />
             </div>
             <div>
@@ -415,7 +419,7 @@ function CapabilityBand() {
 // Photographic trust band: a real 3-photo collage beside the value story.
 function PhotoTrust() {
   return (
-    <section className="bg-white py-24 border-b border-zinc-100">
+    <section className="bg-neu py-24 border-b border-[#E6E1D6]">
       <div className="max-w-[1600px] mx-auto px-6 lg:px-12 grid lg:grid-cols-2 gap-14 items-center">
         <Reveal>
           <h2 className="font-serif text-zinc-900 text-4xl md:text-5xl leading-[1.1]">
@@ -442,24 +446,24 @@ function PhotoTrust() {
           </div>
         </Reveal>
         <Reveal delay={120}>
-          <div className="grid grid-cols-5 grid-rows-2 gap-4 h-[24rem] md:h-[28rem]">
+          <div className="grid grid-cols-5 grid-rows-2 gap-6 h-[24rem] md:h-[28rem]">
             <img
               src={IMG("1600880292203-757bb62b4baf", 800, 1000)}
               alt="Team reviewing payroll together"
               loading="lazy"
-              className="col-span-3 row-span-2 w-full h-full object-cover rounded-2xl ring-1 ring-primary-100 shadow-card"
+              className="col-span-3 row-span-2 w-full h-full object-cover rounded-2xl shadow-neu-lg"
             />
             <img
               src={IMG("1521737604893-d14cc237f11d", 640, 480)}
               alt="Colleagues collaborating in an office"
               loading="lazy"
-              className="col-span-2 w-full h-full object-cover rounded-2xl ring-1 ring-zinc-200 shadow-card"
+              className="col-span-2 w-full h-full object-cover rounded-2xl shadow-neu"
             />
             <img
               src={IMG("1497215728101-856f4ea42174", 640, 480)}
               alt="Modern workplace"
               loading="lazy"
-              className="col-span-2 w-full h-full object-cover rounded-2xl ring-1 ring-zinc-200 shadow-card"
+              className="col-span-2 w-full h-full object-cover rounded-2xl shadow-neu"
             />
           </div>
         </Reveal>
@@ -503,7 +507,7 @@ function FeatureCard({ icon: Icon, title, body, className = "", accent = false, 
   }
   return (
     <div
-      className={`rounded-2xl border bg-white border-zinc-200 hover:border-zinc-300 hover:shadow-card-hover overflow-hidden transition-[transform,box-shadow,border-color] duration-300 ease-spring hover:-translate-y-1 ${className}`}
+      className={`rounded-2xl bg-neu shadow-neu hover:shadow-neu-lg overflow-hidden transition-[transform,box-shadow] duration-300 ease-spring hover:-translate-y-1 ${className}`}
     >
       {img && (
         <img
@@ -515,7 +519,7 @@ function FeatureCard({ icon: Icon, title, body, className = "", accent = false, 
         />
       )}
       <div className="p-6">
-        <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4 bg-primary-50 border border-primary-100">
+        <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4 bg-neu shadow-neu-sm">
           <Icon size={20} strokeWidth={2} className="text-primary-600" />
         </div>
         <h3 className="font-semibold text-lg tracking-tight text-zinc-900">{title}</h3>
@@ -527,7 +531,7 @@ function FeatureCard({ icon: Icon, title, body, className = "", accent = false, 
 
 function Features() {
   return (
-    <section id="features" className="bg-[#FBFAF8] py-24">
+    <section id="features" className="bg-neu py-24">
       <div className="max-w-[1600px] mx-auto px-6 lg:px-12">
         <Reveal>
           <Eyebrow>Everything payroll needs</Eyebrow>
@@ -593,7 +597,7 @@ function Compliance() {
     "TDS aggregated across the financial year",
   ];
   return (
-    <section id="compliance" className="bg-white py-24 border-y border-zinc-100">
+    <section id="compliance" className="bg-neu py-24">
       <div className="max-w-[1600px] mx-auto px-6 lg:px-12 grid lg:grid-cols-2 gap-14 items-center">
         <Reveal>
           <h2 className="font-serif text-zinc-900 text-4xl md:text-5xl leading-[1.1]">
@@ -616,7 +620,7 @@ function Compliance() {
           </ul>
         </Reveal>
         <Reveal delay={120}>
-          <div className="rounded-2xl bg-[#FBFAF8] border border-zinc-200 p-6">
+          <div className="rounded-2xl bg-neu shadow-neu-inset p-6">
             <p className="text-2xs font-semibold uppercase tracking-wider text-zinc-400">
               Statutory rates
             </p>
@@ -667,7 +671,7 @@ function HowItWorks() {
     },
   ];
   return (
-    <section className="relative overflow-hidden bg-[#FBFAF8] py-24">
+    <section className="relative overflow-hidden bg-neu py-24">
       <WaveBg />
       <div className="relative z-10 max-w-[1600px] mx-auto px-6 lg:px-12">
         <Reveal>
@@ -678,7 +682,7 @@ function HowItWorks() {
         <div className="mt-14 grid md:grid-cols-3 gap-8">
           {steps.map((s, i) => (
             <Reveal key={s.title} delay={i * 80}>
-              <div className="group rounded-2xl bg-white border border-zinc-200 shadow-card overflow-hidden transition-[transform,box-shadow] duration-300 ease-spring hover:-translate-y-1 hover:shadow-card-hover">
+              <div className="group rounded-2xl bg-neu shadow-neu overflow-hidden transition-[transform,box-shadow] duration-300 ease-spring hover:-translate-y-1 hover:shadow-neu-lg">
                 <div className="relative h-44 overflow-hidden">
                   <img
                     src={IMG(s.img, 720, 440)}
@@ -691,7 +695,7 @@ function HowItWorks() {
                   </span>
                 </div>
                 <div className="p-6">
-                  <div className="w-11 h-11 rounded-xl bg-primary-50 border border-primary-100 flex items-center justify-center">
+                  <div className="w-11 h-11 rounded-xl bg-neu shadow-neu-sm flex items-center justify-center">
                     <s.icon size={20} className="text-primary-600" strokeWidth={2} />
                   </div>
                   <h3 className="mt-4 text-zinc-900 font-semibold text-lg tracking-tight">
@@ -736,7 +740,7 @@ function Security() {
     },
   ];
   return (
-    <section id="security" className="bg-white py-24">
+    <section id="security" className="bg-neu py-24">
       <div className="max-w-[1600px] mx-auto px-6 lg:px-12">
         <Reveal>
           <h2 className="font-serif text-zinc-900 text-4xl md:text-5xl leading-[1.1] max-w-2xl">
@@ -750,8 +754,8 @@ function Security() {
         <div className="mt-14 grid md:grid-cols-2 gap-x-14 gap-y-12">
           {points.map((p, i) => (
             <Reveal key={p.title} delay={i * 60}>
-              <div className="border-t border-zinc-200 pt-6 flex items-start gap-4">
-                <div className="w-11 h-11 rounded-xl bg-primary-50 border border-primary-100 flex items-center justify-center flex-shrink-0">
+              <div className="border-t border-[#E4DED2] pt-6 flex items-start gap-4">
+                <div className="w-11 h-11 rounded-xl bg-neu shadow-neu-sm flex items-center justify-center flex-shrink-0">
                   <p.icon size={20} className="text-primary-600" strokeWidth={2} />
                 </div>
                 <div>
@@ -795,7 +799,7 @@ function Faq() {
     },
   ];
   return (
-    <section className="bg-white py-24">
+    <section className="bg-neu py-24">
       <div className="max-w-3xl mx-auto px-6">
         <Reveal>
           <h2 className="font-serif text-zinc-900 text-4xl md:text-5xl leading-[1.1] text-center">
@@ -828,7 +832,7 @@ function Faq() {
 
 function Testimonials() {
   return (
-    <section className="bg-white py-24 border-y border-zinc-100">
+    <section className="bg-neu py-24">
       <div className="max-w-3xl mx-auto px-6 text-center">
         <Reveal>
           <figure>
@@ -863,10 +867,10 @@ function Testimonials() {
 function PricingCard({ plan }) {
   return (
     <div
-      className={`relative rounded-2xl p-7 flex flex-col border transition-[transform,box-shadow,border-color] duration-300 ease-spring hover:-translate-y-1 ${
+      className={`relative rounded-2xl p-7 flex flex-col transition-[transform,box-shadow] duration-300 ease-spring hover:-translate-y-1 ${
         plan.featured
-          ? "border-primary-500 bg-white shadow-amber-lg"
-          : "border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-card-hover"
+          ? "bg-neu shadow-neu-amber"
+          : "bg-neu shadow-neu hover:shadow-neu-lg"
       }`}
     >
       {plan.featured && (
@@ -926,7 +930,7 @@ function Pricing() {
     },
   ];
   return (
-    <section id="pricing" className="bg-[#FBFAF8] py-24">
+    <section id="pricing" className="bg-neu py-24">
       <div className="max-w-[1600px] mx-auto px-6 lg:px-12">
         <Reveal>
           <Eyebrow>Simple, transparent pricing</Eyebrow>

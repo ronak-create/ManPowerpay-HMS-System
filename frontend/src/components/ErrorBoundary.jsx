@@ -19,9 +19,12 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6 text-center">
-          <div className="max-w-md w-full bg-white rounded-3xl shadow-xl border border-red-100 p-10 animate-scale-in">
-            <div className="w-20 h-20 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6 text-red-500">
+        <div className="min-h-screen bg-neu flex items-center justify-center p-6 text-center">
+          <div className="max-w-md w-full bg-neu rounded-3xl shadow-neu-lg p-10 animate-scale-in">
+            <div
+              className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 text-red-500 bg-neu"
+              style={{ boxShadow: 'inset 4px 4px 9px rgba(176,148,112,.3), inset -4px -4px 9px rgba(255,255,255,.85)' }}
+            >
               <AlertTriangle size={40} />
             </div>
             <h1 className="text-2xl font-black text-gray-900 mb-2">Something went wrong</h1>

@@ -21,7 +21,9 @@
 
   body {
     font-family: 'DM Sans', system-ui, sans-serif;
-    background-color: #FAFAF8;
+    /* Warm ivory neumorphic base: surfaces share this color and are set apart
+       only by soft dual shadows (highlight upper-left, warm shadow lower-right). */
+    background-color: #F0EDE6;
     color: #18181B;
     font-size: 14px;
     line-height: 1.6;
@@ -47,21 +49,20 @@
   .page-subtitle { @apply text-sm text-zinc-500 mb-6 font-normal; }
   .section-title { @apply text-sm font-semibold text-zinc-700 uppercase tracking-widest mb-4; }
 
-  /* ── Cards ── */
+  /* ── Cards ── (raised neumorphic: same ivory color, lifted by dual shadow) */
   .card {
-    @apply bg-white rounded-2xl border border-zinc-100 shadow-card p-5;
+    @apply bg-neu rounded-2xl shadow-neu p-5;
     transition: box-shadow 0.2s ease, transform 0.2s ease;
   }
   .card-hover {
-    @apply hover:shadow-card-hover hover:-translate-y-0.5;
+    @apply hover:shadow-neu-lg hover:-translate-y-0.5;
     transition: box-shadow 0.25s ease, transform 0.25s ease;
   }
 
-  /* Stat card with amber shimmer */
+  /* Stat card with amber shimmer — brand pop, raised on the ivory surface */
   .stat-card-amber {
-    @apply relative overflow-hidden rounded-2xl p-5 text-white;
+    @apply relative overflow-hidden rounded-2xl p-5 text-white shadow-neu-amber;
     background: linear-gradient(135deg, #B45309 0%, #D97706 50%, #F59E0B 100%);
-    box-shadow: 0 4px 14px 0 rgba(217,119,6,.35);
   }
   .stat-card-amber::after {
     content: '';
@@ -73,26 +74,31 @@
     pointer-events: none;
   }
 
-  /* ── Form inputs ── */
+  /* ── Form inputs ── (recessed neumorphic: pressed into the ivory surface) */
   .input-base {
-    @apply w-full border border-zinc-200 rounded-xl px-3.5 py-2.5 text-sm bg-white
-           text-zinc-900 placeholder-zinc-400 outline-none
-           transition-all duration-150;
-    box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    @apply w-full rounded-xl px-3.5 py-2.5 text-sm bg-neu
+           text-zinc-900 placeholder-zinc-500 outline-none
+           shadow-neu-inset transition-all duration-150;
   }
   .input-base:focus {
-    @apply border-amber-400;
-    box-shadow: 0 0 0 3px rgba(217,119,6,.12), 0 1px 2px rgba(0,0,0,.04);
+    box-shadow: inset 4px 4px 9px rgba(176,148,112,.30),
+                inset -4px -4px 9px rgba(255,255,255,.85),
+                0 0 0 3px rgba(217,119,6,.28);
   }
   .input-base:disabled {
-    @apply bg-zinc-50 text-zinc-400 cursor-not-allowed border-zinc-100;
+    @apply text-zinc-400 cursor-not-allowed;
+    box-shadow: inset 2px 2px 5px rgba(176,148,112,.20),
+                inset -2px -2px 5px rgba(255,255,255,.7);
   }
   .input-error {
-    @apply border-red-400 bg-red-50;
-    box-shadow: 0 0 0 3px rgba(239,68,68,.1);
+    box-shadow: inset 4px 4px 9px rgba(176,148,112,.26),
+                inset -4px -4px 9px rgba(255,255,255,.8),
+                0 0 0 2px rgba(239,68,68,.45);
   }
   .input-error:focus {
-    box-shadow: 0 0 0 3px rgba(239,68,68,.15);
+    box-shadow: inset 4px 4px 9px rgba(176,148,112,.26),
+                inset -4px -4px 9px rgba(255,255,255,.8),
+                0 0 0 3px rgba(239,68,68,.5);
   }
 
   /* ── Buttons ── */
@@ -104,46 +110,67 @@
   .btn-primary {
     @apply btn px-4 py-2.5 text-sm text-white;
     background: linear-gradient(135deg, var(--brand-dark, #B45309) 0%, var(--brand, #D97706) 100%);
-    box-shadow: 0 2px 8px rgba(217,119,6,.3);
+    box-shadow: 5px 5px 12px rgba(176,148,112,.32),
+                -5px -5px 12px rgba(255,255,255,.7),
+                0 3px 10px rgba(217,119,6,.28);
   }
   .btn-primary:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--brand-dark, #92400E) 0%, var(--brand-dark, #B45309) 100%);
-    filter: brightness(0.94);
-    box-shadow: 0 4px 14px rgba(217,119,6,.4);
+    filter: brightness(0.96);
     transform: translateY(-1px);
+    box-shadow: 7px 7px 16px rgba(176,148,112,.36),
+                -6px -6px 14px rgba(255,255,255,.75),
+                0 5px 14px rgba(217,119,6,.34);
   }
   .btn-primary:active:not(:disabled) {
     transform: translateY(0);
-    box-shadow: 0 2px 6px rgba(217,119,6,.25);
+    box-shadow: inset 3px 3px 7px rgba(120,60,10,.35),
+                inset -2px -2px 6px rgba(255,255,255,.18);
   }
   .btn-secondary {
-    @apply btn px-4 py-2.5 text-sm text-zinc-700 bg-white border border-zinc-200;
-    box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    @apply btn px-4 py-2.5 text-sm text-zinc-700 bg-neu;
+    box-shadow: 4px 4px 10px rgba(176,148,112,.28), -4px -4px 10px rgba(255,255,255,.85);
   }
   .btn-secondary:hover:not(:disabled) {
-    @apply bg-zinc-50 border-zinc-300;
-    box-shadow: 0 2px 6px rgba(0,0,0,.06);
+    @apply text-zinc-900;
     transform: translateY(-1px);
+    box-shadow: 6px 6px 14px rgba(176,148,112,.32), -5px -5px 12px rgba(255,255,255,.9);
+  }
+  .btn-secondary:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: inset 3px 3px 7px rgba(176,148,112,.32), inset -3px -3px 7px rgba(255,255,255,.82);
   }
   .btn-danger {
     @apply btn px-4 py-2.5 text-sm text-white bg-red-600;
-    box-shadow: 0 2px 8px rgba(239,68,68,.25);
+    box-shadow: 4px 4px 10px rgba(176,148,112,.26), -4px -4px 10px rgba(255,255,255,.55), 0 3px 10px rgba(239,68,68,.28);
   }
   .btn-danger:hover:not(:disabled) {
     @apply bg-red-700;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(239,68,68,.35);
+    box-shadow: 6px 6px 14px rgba(176,148,112,.3), -5px -5px 12px rgba(255,255,255,.6), 0 5px 14px rgba(239,68,68,.34);
+  }
+  .btn-danger:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: inset 3px 3px 7px rgba(120,20,20,.35), inset -2px -2px 6px rgba(255,255,255,.15);
   }
   .btn-success {
     @apply btn px-4 py-2.5 text-sm text-white bg-emerald-600;
-    box-shadow: 0 2px 8px rgba(16,185,129,.25);
+    box-shadow: 4px 4px 10px rgba(176,148,112,.26), -4px -4px 10px rgba(255,255,255,.55), 0 3px 10px rgba(16,185,129,.28);
   }
   .btn-success:hover:not(:disabled) {
     @apply bg-emerald-700;
     transform: translateY(-1px);
+    box-shadow: 6px 6px 14px rgba(176,148,112,.3), -5px -5px 12px rgba(255,255,255,.6), 0 5px 14px rgba(16,185,129,.34);
+  }
+  .btn-success:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: inset 3px 3px 7px rgba(6,95,70,.35), inset -2px -2px 6px rgba(255,255,255,.15);
   }
   .btn-ghost {
-    @apply btn px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-100 hover:text-zinc-800 rounded-xl;
+    @apply btn px-3 py-2 text-sm text-zinc-600 hover:text-zinc-900 rounded-xl;
+    transition: box-shadow .15s ease, color .15s ease;
+  }
+  .btn-ghost:active:not(:disabled) {
+    box-shadow: inset 3px 3px 7px rgba(176,148,112,.28), inset -3px -3px 7px rgba(255,255,255,.8);
   }
   .btn-icon {
     @apply inline-flex items-center justify-center w-9 h-9 rounded-xl
@@ -162,14 +189,16 @@
   .badge-purple { @apply badge bg-violet-50 text-violet-700 ring-1 ring-violet-200/60; }
   .badge-indigo { @apply badge bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200/60; }
 
-  /* ── Table ── */
-  .table-wrapper { @apply bg-white rounded-2xl border border-zinc-100 shadow-card overflow-hidden; }
+  /* ── Table ── (raised neu shell; interior stays high-contrast for readability) */
+  .table-wrapper { @apply bg-neu rounded-2xl shadow-neu overflow-hidden; }
   .table-head th {
-    @apply px-5 py-3.5 text-left text-2xs font-semibold text-zinc-400 uppercase tracking-widest
-           bg-zinc-50/80 border-b border-zinc-100;
+    @apply px-5 py-3.5 text-left text-2xs font-semibold text-zinc-500 uppercase tracking-widest;
+    background: #E9E3D8;
+    border-bottom: 1px solid #E0D9CC;
   }
-  .table-row    { @apply hover:bg-amber-50/30 transition-colors duration-100; }
-  .table-cell   { @apply px-5 py-3.5 text-sm text-zinc-700; }
+  .table-row    { @apply transition-colors duration-100 border-b border-[#E7E1D5] last:border-0; }
+  .table-row:hover { background: rgba(217,119,6,.06); }
+  .table-cell   { @apply px-5 py-3.5 text-sm text-zinc-800; }
 
   /* ── Sidebar nav ── */
   .nav-item {
@@ -202,7 +231,8 @@
 
   /* ── Divider ── */
   .divider {
-    @apply border-t border-zinc-100 my-4;
+    @apply my-4;
+    border-top: 1px solid #E2DCCF;
   }
 
   /* ── Tooltip (CSS-only) ── */

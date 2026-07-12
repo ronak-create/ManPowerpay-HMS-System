@@ -37,6 +37,7 @@ import LeaveApplication from "./pages/employee/LeaveApplication";
 import MyProfile from "./pages/employee/MyProfile";
 import EmployeeResignation from "./pages/employee/Resignation";
 import Documentation from "./pages/shared/Documentation";
+import { NotFound, Unauthorized } from "./pages/shared/StatusPage";
 
 const PrivateRoute = ({ children, role }) => {
   const { user, token } = useAuthStore();
@@ -123,15 +124,8 @@ export default function App() {
           <Route path="docs" element={<Documentation />} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-        <Route
-          path="/unauthorized"
-          element={
-            <div className="p-8 text-center text-red-600 text-xl">
-              Access Denied
-            </div>
-          }
-        />
+        <Route path="/unauthorized" element={<Unauthorized />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );

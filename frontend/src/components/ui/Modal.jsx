@@ -21,26 +21,26 @@ export default function Modal({ open, onClose, title, subtitle, children, size =
         onClick={onClose}
       />
 
-      {/* Dialog */}
+      {/* Dialog — raised ivory neumorphic panel */}
       <div className={clsx(
-        'relative bg-white rounded-2xl w-full flex flex-col animate-slide-up',
+        'relative bg-neu rounded-2xl w-full flex flex-col animate-slide-up overflow-hidden',
         sizes[size],
         'max-h-[90vh]'
       )}
-           style={{ boxShadow: '0 24px 80px -12px rgba(0,0,0,.3), 0 0 0 1px rgba(0,0,0,.05)' }}>
+           style={{ boxShadow: '22px 22px 60px rgba(20,15,8,.45), -10px -10px 30px rgba(255,255,255,.08), 0 0 0 1px rgba(255,255,255,.4)' }}>
         {/* Amber top accent line */}
-        <div className="h-px rounded-t-2xl w-full"
+        <div className="h-1 w-full flex-shrink-0"
              style={{ background: 'linear-gradient(90deg, #D97706, #F59E0B, #FBBF24)' }} />
 
         {/* Header */}
-        <div className="flex items-start justify-between px-6 py-5 border-b border-zinc-100 flex-shrink-0">
+        <div className="flex items-start justify-between px-6 py-5 border-b border-[#E4DED2] flex-shrink-0">
           <div>
             <h3 className="font-semibold text-zinc-900">{title}</h3>
             {subtitle && <p className="text-xs text-zinc-400 mt-0.5">{subtitle}</p>}
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-xl hover:bg-zinc-100 flex items-center justify-center transition-colors ml-4 flex-shrink-0 text-zinc-400 hover:text-zinc-600"
+            className="btn-icon ml-4 flex-shrink-0 text-zinc-500 hover:text-zinc-800"
           >
             <X size={16} />
           </button>
@@ -51,7 +51,7 @@ export default function Modal({ open, onClose, title, subtitle, children, size =
 
         {/* Footer */}
         {footer && (
-          <div className="px-6 py-4 border-t border-zinc-100 bg-zinc-50/50 rounded-b-2xl flex-shrink-0">
+          <div className="px-6 py-4 border-t border-[#E4DED2] bg-[#E9E3D8]/40 flex-shrink-0">
             {footer}
           </div>
         )}
