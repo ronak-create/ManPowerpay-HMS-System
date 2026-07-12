@@ -20,6 +20,10 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 
+# Local tooling / working assets
+.claude/
+Copilot_*.png
+
 # Project Specific
 **/uploads/
 **/prisma/migrations/migration_lock.toml

@@ -15,7 +15,12 @@ import {
   Landmark,
   Clock,
   Users,
+  Lock,
+  KeyRound,
+  History,
+  Plus,
 } from "lucide-react";
+import BrandGlyph from "../components/BrandGlyph";
 
 /* ManpowerPay marketing landing (public "/"). Premium LIGHT theme: warm off-white
    surfaces, deep ink text, DM Serif Display headlines for a classic/elegant feel,
@@ -27,8 +32,6 @@ import {
 // facearea crop is used for portraits. Swap ids freely.
 const IMG = (id, w, h, fit = "crop") =>
   `https://images.unsplash.com/photo-${id}?auto=format&fit=${fit}&w=${w}&h=${h}&q=80`;
-const FACE = (id) =>
-  `https://images.unsplash.com/photo-${id}?auto=format&fit=facearea&facepad=3&w=160&h=160&q=80`;
 
 // Reveal-on-scroll wrapper. Fires once when the element enters the viewport;
 // collapses to static instantly under prefers-reduced-motion.
@@ -117,12 +120,7 @@ const SecondaryLink = ({ to, children, className = "" }) => (
 
 const Logo = ({ light = false }) => (
   <div className="flex items-center gap-3">
-    <div
-      className="w-9 h-9 rounded-xl flex items-center justify-center"
-      style={{ background: "linear-gradient(135deg, #B45309, #F59E0B)" }}
-    >
-      <span className="text-white font-bold text-sm">MP</span>
-    </div>
+    <BrandGlyph size={36} />
     <span
       className={`font-semibold text-base tracking-tight ${
         light ? "text-white" : "text-zinc-900"
@@ -221,6 +219,9 @@ function Nav() {
           <a href="#compliance" className="text-sm text-zinc-600 hover:text-zinc-900 transition-colors">
             Compliance
           </a>
+          <a href="#security" className="text-sm text-zinc-600 hover:text-zinc-900 transition-colors">
+            Security
+          </a>
           <a href="#pricing" className="text-sm text-zinc-600 hover:text-zinc-900 transition-colors">
             Pricing
           </a>
@@ -228,7 +229,7 @@ function Nav() {
             Sign in
           </Link>
           <PrimaryLink to="/signup" className="!px-4 !py-2">
-            Start free trial
+            Start free
           </PrimaryLink>
         </div>
         <button
@@ -247,13 +248,16 @@ function Nav() {
           <a href="#compliance" onClick={() => setOpen(false)} className="text-sm text-zinc-600">
             Compliance
           </a>
+          <a href="#security" onClick={() => setOpen(false)} className="text-sm text-zinc-600">
+            Security
+          </a>
           <a href="#pricing" onClick={() => setOpen(false)} className="text-sm text-zinc-600">
             Pricing
           </a>
           <Link to="/login" className="text-sm text-zinc-600">
             Sign in
           </Link>
-          <PrimaryLink to="/signup">Start free trial</PrimaryLink>
+          <PrimaryLink to="/signup">Start free</PrimaryLink>
         </div>
       )}
     </header>
@@ -343,7 +347,7 @@ function Hero() {
           <Reveal delay={180}>
             <div className="mt-9 flex flex-wrap gap-3">
               <PrimaryLink to="/signup">
-                Start free trial <ArrowRight size={16} />
+                Start free <ArrowRight size={16} />
               </PrimaryLink>
               <SecondaryLink to="#pricing">View pricing</SecondaryLink>
             </div>
@@ -352,7 +356,7 @@ function Hero() {
         <Reveal delay={200} className="lg:pl-6">
           <div className="relative">
             {/* Soft product stage */}
-            <div className="relative rounded-3xl border border-primary-100 aspect-[4/5] flex items-center justify-center overflow-hidden shadow-card-lift">
+            <div className="relative rounded-3xl border border-primary-100 aspect-[4/5] overflow-hidden shadow-card-lift">
               <img
                 src={IMG("1552664730-d307ca884978", 900, 1120)}
                 alt="Payroll team at work"
@@ -362,13 +366,10 @@ function Hero() {
                 className="absolute inset-0"
                 style={{
                   background:
-                    "linear-gradient(150deg, rgba(24,24,27,.20) 0%, rgba(180,83,9,.50) 100%)",
+                    "linear-gradient(150deg, rgba(24,24,27,.12) 0%, rgba(180,83,9,.38) 100%)",
                 }}
               />
-              <div className="relative">
-                <PayslipCard className="rotate-[-3deg]" />
-              </div>
-              <div className="absolute top-7 right-7 flex items-center gap-2 rounded-xl bg-white/95 backdrop-blur border border-white/60 px-3 py-2 shadow-card">
+              <div className="absolute top-7 left-7 flex items-center gap-2 rounded-xl bg-white/95 backdrop-blur border border-white/60 px-3 py-2 shadow-card">
                 <ShieldCheck size={15} className="text-emerald-500" strokeWidth={2} />
                 <span className="text-xs font-medium text-zinc-700">Statutory compliant</span>
               </div>
@@ -376,6 +377,7 @@ function Hero() {
                 <Building2 size={15} className="text-primary-600" strokeWidth={2} />
                 <span className="text-xs font-medium text-zinc-700">3 companies, 1 login</span>
               </div>
+              <PayslipCard className="absolute bottom-7 right-7 rotate-[-3deg]" />
             </div>
           </div>
         </Reveal>
@@ -417,7 +419,7 @@ function PhotoTrust() {
       <div className="max-w-[1600px] mx-auto px-6 lg:px-12 grid lg:grid-cols-2 gap-14 items-center">
         <Reveal>
           <h2 className="font-serif text-zinc-900 text-4xl md:text-5xl leading-[1.1]">
-            Payroll teams across India <Accent>run on it.</Accent>
+            Built for payroll teams <Accent>across India.</Accent>
           </h2>
           <p className="text-zinc-600 mt-5 leading-relaxed max-w-[50ch]">
             From single offices to multi-company groups, ManpowerPay handles the
@@ -708,54 +710,151 @@ function HowItWorks() {
   );
 }
 
-function Testimonials() {
-  const quotes = [
+// Security & trust. Every claim here maps to a shipped capability; no
+// certification badges are shown because none are held yet.
+function Security() {
+  const points = [
     {
-      quote:
-        "We moved three group companies onto ManpowerPay and closed payroll two days earlier than before.",
-      name: "Priya Nair",
-      role: "HR Lead, Suryodaya Textiles",
-      img: FACE("1494790108377-be9c29b29330"),
+      icon: Lock,
+      title: "Encrypted at rest",
+      body: "Aadhaar, PAN and bank account numbers are encrypted with AES-256-GCM before they reach the database.",
     },
     {
-      quote:
-        "The statutory calculations just match our CA's figures. That alone paid for the switch.",
-      name: "Rohit Deshmukh",
-      role: "Founder, Kaveri Logistics",
-      img: FACE("1500648767791-00dcc994a43e"),
+      icon: Building2,
+      title: "Isolated per company",
+      body: "Every query is scoped to your company at the data layer, so no tenant can ever read another's records.",
+    },
+    {
+      icon: KeyRound,
+      title: "Role-based access",
+      body: "Admins, supervisors and employees each see exactly what their role allows, nothing more.",
+    },
+    {
+      icon: History,
+      title: "Full audit trail",
+      body: "Sensitive actions are logged with who did them and when, ready for internal review.",
     },
   ];
   return (
-    <section className="bg-white py-24 border-y border-zinc-100">
+    <section id="security" className="bg-white py-24">
       <div className="max-w-[1600px] mx-auto px-6 lg:px-12">
         <Reveal>
-          <h2 className="font-serif text-zinc-900 text-4xl md:text-5xl leading-[1.1] max-w-xl">
-            Built for the people who run payroll.
+          <h2 className="font-serif text-zinc-900 text-4xl md:text-5xl leading-[1.1] max-w-2xl">
+            Treated like payroll data <Accent>should be.</Accent>
           </h2>
+          <p className="text-zinc-600 mt-5 leading-relaxed max-w-[52ch]">
+            Salary and identity data are the most sensitive records a company
+            holds. The platform is built around that fact.
+          </p>
         </Reveal>
-        <div className="mt-12 grid md:grid-cols-2 gap-6">
-          {quotes.map((q, i) => (
-            <Reveal key={q.name} delay={i * 80}>
-              <figure className="h-full rounded-2xl bg-[#FBFAF8] border border-zinc-200 p-7 flex flex-col">
-                <blockquote className="text-lg text-zinc-800 leading-relaxed">
-                  “{q.quote}”
-                </blockquote>
-                <figcaption className="mt-6 flex items-center gap-3">
-                  <img
-                    src={q.img}
-                    alt={q.name}
-                    className="w-11 h-11 rounded-full object-cover ring-1 ring-zinc-200"
-                    loading="lazy"
-                  />
-                  <div>
-                    <p className="text-sm font-semibold text-zinc-900">{q.name}</p>
-                    <p className="text-xs text-zinc-500">{q.role}</p>
-                  </div>
-                </figcaption>
-              </figure>
+        <div className="mt-14 grid md:grid-cols-2 gap-x-14 gap-y-12">
+          {points.map((p, i) => (
+            <Reveal key={p.title} delay={i * 60}>
+              <div className="border-t border-zinc-200 pt-6 flex items-start gap-4">
+                <div className="w-11 h-11 rounded-xl bg-primary-50 border border-primary-100 flex items-center justify-center flex-shrink-0">
+                  <p.icon size={20} className="text-primary-600" strokeWidth={2} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg tracking-tight text-zinc-900">
+                    {p.title}
+                  </h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-zinc-600 max-w-[48ch]">
+                    {p.body}
+                  </p>
+                </div>
+              </div>
             </Reveal>
           ))}
         </div>
+      </div>
+    </section>
+  );
+}
+
+function Faq() {
+  const items = [
+    {
+      q: "Is my company's data separate from other companies?",
+      a: "Yes. Every record carries your company's identity and every query is filtered by it automatically at the data layer. One company can never see another's employees, salaries or documents.",
+    },
+    {
+      q: "What happens when statutory rates change?",
+      a: "The platform ships with current Indian defaults (EPF, ESIC, PT, TDS). Every rate, ceiling and threshold is editable per company under Statutory Rules, so you can apply a change the day it is announced.",
+    },
+    {
+      q: "Do I need a credit card to start?",
+      a: "No. The free plan covers up to 10 employees with full payroll, attendance and compliance. You only pay when you outgrow it.",
+    },
+    {
+      q: "How do my employees get access?",
+      a: "When you add an employee, the system issues a one-time temporary password. They must set their own password on first login, then they get a self-service portal for payslips, attendance and leave.",
+    },
+    {
+      q: "Can I change plans later?",
+      a: "Yes. Upgrades and downgrades happen from Billing & Plan inside the app. Payments are processed by Razorpay; card details never touch our servers.",
+    },
+  ];
+  return (
+    <section className="bg-white py-24">
+      <div className="max-w-3xl mx-auto px-6">
+        <Reveal>
+          <h2 className="font-serif text-zinc-900 text-4xl md:text-5xl leading-[1.1] text-center">
+            Common questions
+          </h2>
+        </Reveal>
+        <Reveal delay={80}>
+          <div className="mt-12 divide-y divide-zinc-200 border-y border-zinc-200">
+            {items.map((item) => (
+              <details key={item.q} className="group py-5">
+                <summary className="flex items-center justify-between gap-4 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                  <span className="font-semibold text-zinc-900">{item.q}</span>
+                  <Plus
+                    size={18}
+                    className="text-primary-600 flex-shrink-0 transition-transform duration-200 group-open:rotate-45"
+                    strokeWidth={2.5}
+                  />
+                </summary>
+                <p className="mt-3 text-sm text-zinc-600 leading-relaxed max-w-[62ch]">
+                  {item.a}
+                </p>
+              </details>
+            ))}
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+function Testimonials() {
+  return (
+    <section className="bg-white py-24 border-y border-zinc-100">
+      <div className="max-w-3xl mx-auto px-6 text-center">
+        <Reveal>
+          <figure>
+            <blockquote className="font-serif text-2xl md:text-3xl text-zinc-800 leading-snug">
+              “ManpowerPay runs payroll for our site workforce across projects.
+              The monthly cycle closes days earlier, and the statutory figures
+              match our CA's every time.”
+            </blockquote>
+            <figcaption className="mt-8 flex items-center justify-center gap-3">
+              <span
+                className="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold"
+                style={{ background: "linear-gradient(135deg, #B45309, #F59E0B)" }}
+              >
+                S
+              </span>
+              <span className="text-left">
+                <span className="block text-sm font-semibold text-zinc-900">
+                  CEO, Shri Sainath Enterprises Pvt. Ltd.
+                </span>
+                <span className="block text-xs text-zinc-500">
+                  Engineering contractor, Ankleshwar, Gujarat
+                </span>
+              </span>
+            </figcaption>
+          </figure>
+        </Reveal>
       </div>
     </section>
   );
@@ -798,7 +897,7 @@ function PricingCard({ plan }) {
         ))}
       </ul>
       <PrimaryLink to="/signup" className="mt-7 w-full">
-        Start free trial
+        Start free
       </PrimaryLink>
     </div>
   );
@@ -832,9 +931,11 @@ function Pricing() {
         <Reveal>
           <Eyebrow>Simple, transparent pricing</Eyebrow>
           <h2 className="font-serif text-zinc-900 text-4xl md:text-5xl leading-[1.1]">
-            Start with a 14-day free trial.
+            Start free. Upgrade as you grow.
           </h2>
-          <p className="text-zinc-600 mt-3">No credit card required.</p>
+          <p className="text-zinc-600 mt-3">
+            Up to 10 employees free, forever. No credit card required.
+          </p>
         </Reveal>
         <div className="mt-12 grid md:grid-cols-3 gap-6 items-stretch">
           {plans.map((p, i) => (
@@ -867,7 +968,7 @@ function ClosingDark() {
             </p>
             <div className="mt-9 flex justify-center">
               <PrimaryLink to="/signup" className="!px-7 !py-3.5 !text-base">
-                Start free trial <ArrowRight size={18} />
+                Start free <ArrowRight size={18} />
               </PrimaryLink>
             </div>
           </Reveal>
@@ -914,8 +1015,10 @@ export default function LandingPage() {
         <Features />
         <Compliance />
         <HowItWorks />
+        <Security />
         <Testimonials />
         <Pricing />
+        <Faq />
       </main>
       <ClosingDark />
     </div>

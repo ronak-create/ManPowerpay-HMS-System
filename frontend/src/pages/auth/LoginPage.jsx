@@ -6,6 +6,7 @@ import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../../api/axios';
 import useAuthStore from '../../store/authStore';
+import BrandGlyph from '../../components/BrandGlyph';
 
 export default function LoginPage() {
   const { register, handleSubmit, formState: { errors } } = useForm();
@@ -48,17 +49,14 @@ export default function LoginPage() {
 
         <div className="relative">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                 style={{ background: 'linear-gradient(135deg, #B45309, #F59E0B)' }}>
-              <span className="text-white font-bold text-sm">MP</span>
-            </div>
+            <BrandGlyph size={36} />
             <span className="text-white font-semibold text-base tracking-tight">ManpowerPay HMS</span>
           </div>
         </div>
 
         <div className="relative">
           <p className="text-xs font-semibold uppercase tracking-widest mb-4"
-             style={{ color: 'rgba(217,119,6,.7)' }}>Trusted by 500+ companies</p>
+             style={{ color: 'rgba(217,119,6,.7)' }}>Multi-company payroll &amp; HR for India</p>
           <h1 className="text-4xl font-semibold text-white leading-[1.15] tracking-tight">
             Payroll &amp; HR<br />
             <span style={{ background: 'linear-gradient(135deg, #D97706, #F59E0B)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
@@ -66,7 +64,7 @@ export default function LoginPage() {
             </span>
           </h1>
           <p className="text-zinc-400 mt-4 text-sm leading-relaxed max-w-xs font-normal">
-            Attendance, payroll processing, statutory compliance, and payslips — all in one platform.
+            Attendance, payroll processing, statutory compliance, and payslips, all in one platform.
           </p>
 
           <div className="flex gap-5 mt-10">
@@ -87,9 +85,7 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-              <span className="text-white font-black">MP</span>
-            </div>
+            <BrandGlyph size={40} />
             <span className="font-bold text-gray-900">ManpowerPay HMS</span>
           </div>
 
@@ -106,7 +102,7 @@ export default function LoginPage() {
                 placeholder="you@company.com"
                 autoComplete="email"
               />
-              {errors.email && <p className="text-red-500 text-xs mt-1.5">⚠ {errors.email.message}</p>}
+              {errors.email && <p className="text-red-500 text-xs mt-1.5">{errors.email.message}</p>}
             </div>
 
             <div>
@@ -127,7 +123,7 @@ export default function LoginPage() {
                   {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
-              {errors.password && <p className="text-red-500 text-xs mt-1.5">⚠ {errors.password.message}</p>}
+              {errors.password && <p className="text-red-500 text-xs mt-1.5">{errors.password.message}</p>}
             </div>
 
             <button type="submit" disabled={loading}
