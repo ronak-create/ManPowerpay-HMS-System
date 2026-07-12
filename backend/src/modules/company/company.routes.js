@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { getCompany, updateCompany, uploadLogo, getLogo, addHoliday, deleteHoliday, updatePTSlabs, addSite, deleteSite, addDepartment, deleteDepartment, createAdvanceLoan, listAdvanceLoans, getStatutoryConfig, updateStatutoryConfig } from './company.controller.js';
+import { exportCompanyData } from '../dataexport/dataexport.controller.js';
 import { verifyJWT } from '../../middleware/auth.js';
 import { requireRole } from '../../middleware/roles.js';
 import { imageFileFilter } from '../../utils/uploads.js';
@@ -31,5 +32,6 @@ router.post('/departments', requireRole('admin'), addDepartment);
 router.delete('/departments/:id', requireRole('admin'), deleteDepartment);
 router.post('/advance-loans', requireRole('admin'), createAdvanceLoan);
 router.get('/advance-loans', requireRole('admin'), listAdvanceLoans);
+router.get('/export', requireRole('admin'), exportCompanyData);
 
 export default router;

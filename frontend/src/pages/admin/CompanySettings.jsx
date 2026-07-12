@@ -15,6 +15,10 @@ import {
   Landmark,
   RotateCcw,
   Info,
+  Download,
+  Database,
+  FileJson,
+  FileSpreadsheet,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
@@ -1712,6 +1716,101 @@ function StatutoryConfigTab() {
 
 // ─── MAIN PAGE ───────────────────────────────────────────────────────────────
 
+// ─── TAB: Data Export ────────────────────────────────────────────────────────
+
+function DataExportTab({ company }) {
+  const [busy, setBusy] = useState(null); // 'json' | 'excel' | null
+  const [includeAudit, setIncludeAudit] = useState(false);
+
+  const download = async (fmt) => {
+    setBusy(fmt);
+    try {
+      const res = await api.get("/company/export", {
+        params: { format: fmt, includeAuditLogs: includeAudit },
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+      const ext = fmt === "excel" ? "xlsx" : "json";
+      const slug =
+        (company?.name || "company").replace(/[^a-z0-9]+/gi, "_").replace(/^_+|_+$/g, "") || "company";
+      const stamp = format(new Date(), "yyyyMMdd");
+      link.href = url;
+      link.download = `${slug}_export_${stamp}.${ext}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("Export downloaded");
+    } catch {
+      toast.error("Export failed. Please try again.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-start gap-3">
+        <Database size={20} className="text-amber-600 flex-shrink-0 mt-0.5" />
+        <div>
+          <h3 className="font-bold text-gray-800">Export Company Data</h3>
+          <p className="text-sm text-gray-500 mt-1 max-w-xl">
+            Download a complete copy of your organisation's records — employees, attendance,
+            payroll, payslips, leaves and advances. Useful for backups, audits and data
+            portability. User login credentials are never included.
+          </p>
+        </div>
+      </div>
+
+      <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={includeAudit}
+          onChange={(e) => setIncludeAudit(e.target.checked)}
+          className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+        />
+        Include audit logs (larger file)
+      </label>
+
+      <div className="grid sm:grid-cols-2 gap-4 max-w-2xl">
+        <button
+          onClick={() => download("json")}
+          disabled={busy !== null}
+          className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-amber-400 hover:shadow-card transition disabled:opacity-50 text-left"
+        >
+          <FileJson size={28} className="text-amber-600 flex-shrink-0" />
+          <div>
+            <p className="font-semibold text-gray-800 flex items-center gap-2">
+              JSON archive {busy === "json" && <span className="text-xs text-gray-400">…exporting</span>}
+            </p>
+            <p className="text-xs text-gray-500">Machine-readable, full fidelity</p>
+          </div>
+        </button>
+
+        <button
+          onClick={() => download("excel")}
+          disabled={busy !== null}
+          className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-amber-400 hover:shadow-card transition disabled:opacity-50 text-left"
+        >
+          <FileSpreadsheet size={28} className="text-emerald-600 flex-shrink-0" />
+          <div>
+            <p className="font-semibold text-gray-800 flex items-center gap-2">
+              Excel workbook {busy === "excel" && <span className="text-xs text-gray-400">…exporting</span>}
+            </p>
+            <p className="text-xs text-gray-500">One sheet per record type</p>
+          </div>
+        </button>
+      </div>
+
+      <p className="text-xs text-gray-400 flex items-center gap-1.5">
+        <Download size={12} /> Handle exported files securely — they contain personal and
+        financial information.
+      </p>
+    </div>
+  );
+}
+
 const TABS = [
   { id: "profile", label: "Company Profile", icon: Building2 },
   { id: "payroll", label: "Payroll Config", icon: IndianRupee },
@@ -1719,6 +1818,7 @@ const TABS = [
   { id: "holidays", label: "Holidays", icon: Calendar },
   { id: "pt", label: "PT Slabs", icon: IndianRupee },
   { id: "structure", label: "Structure", icon: Layers },
+  { id: "export", label: "Data Export", icon: Database },
 ];
 
 export default function CompanySettings() {
@@ -1800,6 +1900,7 @@ export default function CompanySettings() {
         {activeTab === "structure" && (
           <StructureTab company={company} onSaved={fetchCompany} />
         )}
+        {activeTab === "export" && <DataExportTab company={company} />}
       </div>
     </div>
   );
